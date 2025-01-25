@@ -99,6 +99,7 @@ where
         write!(f, "V2<{}, {}> {{ data: {:?} }}", N_ROWS, N_COLS, self.data)
     }
 }
+
 impl<T, const N_ROWS: usize, const N_COLS: usize> Clone for V2<T, N_ROWS, N_COLS>
 where
     T: Clone,
@@ -109,6 +110,21 @@ where
         }
     }
 }
+
+impl<T, const N_ROWS: usize, const N_COLS: usize> Default for V2<T, N_ROWS, N_COLS>
+where
+    T: Default,
+{
+    fn default() -> Self {
+        let len = N_ROWS * N_COLS;
+        let mut data = Vec::with_capacity(len);
+        for _ in 0..len {
+            data.push(T::default())
+        }
+        Self { data }
+    }
+}
+
 impl<T, const N_ROWS: usize, const N_COLS: usize> std::fmt::Display for V2<T, N_ROWS, N_COLS>
 where
     T: std::fmt::Display,
@@ -403,3 +419,20 @@ fn test_neighbors() {
         "bottom middle"
     );
 }
+
+pub struct V2Indexed<'a, T, const N_ROWS: usize, const N_COLS: usize> {
+    indices: V2Indices<N_ROWS, N_COLS>,
+    i: usize,
+    data: &'a T,
+}
+
+impl<'a, T, const N_ROWS: usize, const N_COLS: usize> V2Indexed<'a, T, N_ROWS, N_COLS> {
+    fn new(data: &'a T) -> Self {
+        Self {
+            indices: V2Indices::new(),
+            i: 0,
+            data,
+        }
+    }
+}
+
