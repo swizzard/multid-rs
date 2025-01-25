@@ -39,6 +39,57 @@ impl<T, const N_ROWS: usize, const N_COLS: usize> V2<T, N_ROWS, N_COLS> {
         row_ix * N_COLS + col_ix
     }
 }
+impl<T, const N_ROWS: usize, const N_COLS: usize> V2<T, N_ROWS, N_COLS>
+where
+    T: Clone,
+{
+    pub fn add_col(self, col: Vec<T>) -> Result<V2<T, N_ROWS, { N_COLS + 1 }>, VError> {
+        if col.len() != N_ROWS {
+            Err(VError::SizingError {
+                expected: N_ROWS,
+                actual: col.len(),
+            })
+        } else {
+            let mut new_data = self.data;
+            for (row_ix, item) in col.iter().enumerate() {
+                new_data.insert(row_ix * N_COLS + (N_COLS + row_ix), item.clone())
+            }
+            Ok(V2 { data: new_data })
+        }
+    }
+    pub fn add_row(self, row: Vec<T>) -> Result<V2<T, { N_ROWS + 1 }, N_COLS>, VError> {
+        if row.len() != N_COLS {
+            Err(VError::SizingError {
+                expected: N_COLS,
+                actual: row.len(),
+            })
+        } else {
+            let mut new_data = self.data;
+            new_data.extend(row);
+            Ok(V2 { data: new_data })
+        }
+    }
+}
+
+#[cfg(test)]
+#[test]
+fn test_add_col() {
+    let v: V2<u8, 3, 3> = V2::new((0..=8).collect()).unwrap();
+    let c: Vec<u8> = vec![9, 10, 11];
+    let expected = vec![0, 1, 2, 9, 3, 4, 5, 10, 6, 7, 8, 11];
+    let actual = v.add_col(c).unwrap();
+    assert_eq!(expected, actual.data);
+}
+
+#[cfg(test)]
+#[test]
+fn test_add_row() {
+    let v: V2<u8, 3, 3> = V2::new((0..=8).collect()).unwrap();
+    let r: Vec<u8> = vec![9, 10, 11];
+    let expected = vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+    let actual = v.add_row(r).unwrap();
+    assert_eq!(expected, actual.data);
+}
 
 impl<T, const N_ROWS: usize, const N_COLS: usize> std::fmt::Debug for V2<T, N_ROWS, N_COLS>
 where
