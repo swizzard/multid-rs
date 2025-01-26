@@ -74,26 +74,6 @@ where
     }
 }
 
-#[cfg(test)]
-#[test]
-fn test_add_col() {
-    let v: V2<u8, 3, 3> = V2::new((0..=8).collect()).unwrap();
-    let c: Vec<u8> = vec![9, 10, 11];
-    let expected = vec![0, 1, 2, 9, 3, 4, 5, 10, 6, 7, 8, 11];
-    let actual = v.add_col(c).unwrap();
-    assert_eq!(expected, actual.data);
-}
-
-#[cfg(test)]
-#[test]
-fn test_add_row() {
-    let v: V2<u8, 3, 3> = V2::new((0..=8).collect()).unwrap();
-    let r: Vec<u8> = vec![9, 10, 11];
-    let expected = vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
-    let actual = v.add_row(r).unwrap();
-    assert_eq!(expected, actual.data);
-}
-
 impl<T, const N_ROWS: usize, const N_COLS: usize> std::fmt::Debug for V2<T, N_ROWS, N_COLS>
 where
     T: std::fmt::Debug,
@@ -172,52 +152,6 @@ impl<const N_ROWS: usize, const N_COLS: usize> Iterator for V2Indices<N_ROWS, N_
     }
 }
 
-#[cfg(test)]
-#[test]
-fn test_v2_indices() {
-    let ixs: V2Indices<3, 3> = V2Indices::new();
-    let expected = vec![
-        Ix2 {
-            row_ix: 0,
-            col_ix: 0,
-        },
-        Ix2 {
-            row_ix: 0,
-            col_ix: 1,
-        },
-        Ix2 {
-            row_ix: 0,
-            col_ix: 2,
-        },
-        Ix2 {
-            row_ix: 1,
-            col_ix: 0,
-        },
-        Ix2 {
-            row_ix: 1,
-            col_ix: 1,
-        },
-        Ix2 {
-            row_ix: 1,
-            col_ix: 2,
-        },
-        Ix2 {
-            row_ix: 2,
-            col_ix: 0,
-        },
-        Ix2 {
-            row_ix: 2,
-            col_ix: 1,
-        },
-        Ix2 {
-            row_ix: 2,
-            col_ix: 2,
-        },
-    ];
-    let actual = ixs.into_iter().collect::<Vec<Ix2>>();
-    assert_eq!(expected, actual);
-}
-
 pub struct V2Rows<'a, T, const N_ROWS: usize, const N_COLS: usize> {
     curr_row: usize,
     data: &'a [T],
@@ -242,16 +176,6 @@ impl<'a, T, const N_ROWS: usize, const N_COLS: usize> Iterator for V2Rows<'a, T,
             Some(&self.data[start..end])
         }
     }
-}
-
-#[cfg(test)]
-#[test]
-fn test_v2_rows() {
-    let data: Vec<u8> = (0..9).collect();
-    let rows: V2Rows<u8, 3, 3> = V2Rows::new(&data);
-    let expected: Vec<&[u8]> = vec![&[0, 1, 2], &[3, 4, 5], &[6, 7, 8]];
-    let actual = rows.into_iter().collect::<Vec<&[u8]>>();
-    assert_eq!(expected, actual);
 }
 
 pub struct V2Cols<'a, T, const N_ROWS: usize, const N_COLS: usize> {
@@ -281,15 +205,6 @@ impl<'a, T, const N_ROWS: usize, const N_COLS: usize> Iterator for V2Cols<'a, T,
             Some(v)
         }
     }
-}
-#[cfg(test)]
-#[test]
-fn test_v2_cols() {
-    let data: Vec<u8> = (0..9).collect();
-    let cols: V2Cols<u8, 3, 3> = V2Cols::new(&data);
-    let expected: Vec<Vec<&u8>> = vec![vec![&0, &3, &6], vec![&1, &4, &7], vec![&2, &5, &8]];
-    let actual = cols.into_iter().collect::<Vec<Vec<&u8>>>();
-    assert_eq!(expected, actual);
 }
 
 pub struct V2Neighbors<'a, T, const N_ROWS: usize, const N_COLS: usize> {
@@ -387,42 +302,6 @@ impl<'a, T, const N_ROWS: usize, const N_COLS: usize> Iterator
     }
 }
 
-#[cfg(test)]
-#[test]
-fn test_neighbors() {
-    let v2: V2<u8, 3, 3> = V2::new((0..=8).collect::<Vec<u8>>()).unwrap();
-
-    let expected_upper_left: Vec<&u8> = vec![&1, &3, &4];
-    let actual_upper_left: Vec<&u8> = v2
-        .neighbors_of(Ix2 {
-            row_ix: 0,
-            col_ix: 0,
-        })
-        .collect();
-    assert_eq!(expected_upper_left, actual_upper_left, "upper_left");
-
-    let expected_center: Vec<&u8> = vec![&0, &1, &2, &3, &5, &6, &7, &8];
-    let actual_center: Vec<&u8> = v2
-        .neighbors_of(Ix2 {
-            row_ix: 1,
-            col_ix: 1,
-        })
-        .collect();
-    assert_eq!(expected_center, actual_center, "center");
-
-    let expected_bottom_middle: Vec<&u8> = vec![&3, &4, &5, &6, &8];
-    let actual_bottom_middle: Vec<&u8> = v2
-        .neighbors_of(Ix2 {
-            row_ix: 2,
-            col_ix: 1,
-        })
-        .collect();
-    assert_eq!(
-        expected_bottom_middle, actual_bottom_middle,
-        "bottom middle"
-    );
-}
-
 pub struct V2Indexed<'a, T, const N_ROWS: usize, const N_COLS: usize> {
     indices: V2Indices<N_ROWS, N_COLS>,
     i: usize,
@@ -456,74 +335,188 @@ impl<'a, T, const N_ROWS: usize, const N_COLS: usize> Iterator
 }
 
 #[cfg(test)]
-#[test]
-fn test_indexed() {
-    let v: V2<u8, 3, 3> = V2::new((0..=8).collect()).unwrap();
-    let expected = vec![
-        (
+mod tests {
+    use super::*;
+    #[test]
+    fn test_add_col() {
+        let v: V2<u8, 3, 3> = V2::new((0..=8).collect()).unwrap();
+        let c: Vec<u8> = vec![9, 10, 11];
+        let expected = vec![0, 1, 2, 9, 3, 4, 5, 10, 6, 7, 8, 11];
+        let actual = v.add_col(c).unwrap();
+        assert_eq!(expected, actual.data);
+    }
+
+    #[test]
+    fn test_add_row() {
+        let v: V2<u8, 3, 3> = V2::new((0..=8).collect()).unwrap();
+        let r: Vec<u8> = vec![9, 10, 11];
+        let expected = vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+        let actual = v.add_row(r).unwrap();
+        assert_eq!(expected, actual.data);
+    }
+    #[test]
+    fn test_v2_indices() {
+        let ixs: V2Indices<3, 3> = V2Indices::new();
+        let expected = vec![
             Ix2 {
                 row_ix: 0,
                 col_ix: 0,
             },
-            &0,
-        ),
-        (
             Ix2 {
                 row_ix: 0,
                 col_ix: 1,
             },
-            &1,
-        ),
-        (
             Ix2 {
                 row_ix: 0,
                 col_ix: 2,
             },
-            &2,
-        ),
-        (
             Ix2 {
                 row_ix: 1,
                 col_ix: 0,
             },
-            &3,
-        ),
-        (
             Ix2 {
                 row_ix: 1,
                 col_ix: 1,
             },
-            &4,
-        ),
-        (
             Ix2 {
                 row_ix: 1,
                 col_ix: 2,
             },
-            &5,
-        ),
-        (
             Ix2 {
                 row_ix: 2,
                 col_ix: 0,
             },
-            &6,
-        ),
-        (
             Ix2 {
                 row_ix: 2,
                 col_ix: 1,
             },
-            &7,
-        ),
-        (
             Ix2 {
                 row_ix: 2,
                 col_ix: 2,
             },
-            &8,
-        ),
-    ];
-    let actual = v.indexed().collect::<Vec<(Ix2, &u8)>>();
-    assert_eq!(expected, actual);
+        ];
+        let actual = ixs.into_iter().collect::<Vec<Ix2>>();
+        assert_eq!(expected, actual);
+    }
+    #[test]
+    fn test_v2_rows() {
+        let data: Vec<u8> = (0..9).collect();
+        let rows: V2Rows<u8, 3, 3> = V2Rows::new(&data);
+        let expected: Vec<&[u8]> = vec![&[0, 1, 2], &[3, 4, 5], &[6, 7, 8]];
+        let actual = rows.into_iter().collect::<Vec<&[u8]>>();
+        assert_eq!(expected, actual);
+    }
+    #[test]
+    fn test_v2_cols() {
+        let data: Vec<u8> = (0..9).collect();
+        let cols: V2Cols<u8, 3, 3> = V2Cols::new(&data);
+        let expected: Vec<Vec<&u8>> = vec![vec![&0, &3, &6], vec![&1, &4, &7], vec![&2, &5, &8]];
+        let actual = cols.into_iter().collect::<Vec<Vec<&u8>>>();
+        assert_eq!(expected, actual);
+    }
+    #[test]
+    fn test_neighbors() {
+        let v2: V2<u8, 3, 3> = V2::new((0..=8).collect::<Vec<u8>>()).unwrap();
+
+        let expected_upper_left: Vec<&u8> = vec![&1, &3, &4];
+        let actual_upper_left: Vec<&u8> = v2
+            .neighbors_of(Ix2 {
+                row_ix: 0,
+                col_ix: 0,
+            })
+            .collect();
+        assert_eq!(expected_upper_left, actual_upper_left, "upper_left");
+
+        let expected_center: Vec<&u8> = vec![&0, &1, &2, &3, &5, &6, &7, &8];
+        let actual_center: Vec<&u8> = v2
+            .neighbors_of(Ix2 {
+                row_ix: 1,
+                col_ix: 1,
+            })
+            .collect();
+        assert_eq!(expected_center, actual_center, "center");
+
+        let expected_bottom_middle: Vec<&u8> = vec![&3, &4, &5, &6, &8];
+        let actual_bottom_middle: Vec<&u8> = v2
+            .neighbors_of(Ix2 {
+                row_ix: 2,
+                col_ix: 1,
+            })
+            .collect();
+        assert_eq!(
+            expected_bottom_middle, actual_bottom_middle,
+            "bottom middle"
+        );
+    }
+    #[test]
+    fn test_indexed() {
+        let v: V2<u8, 3, 3> = V2::new((0..=8).collect()).unwrap();
+        let expected = vec![
+            (
+                Ix2 {
+                    row_ix: 0,
+                    col_ix: 0,
+                },
+                &0,
+            ),
+            (
+                Ix2 {
+                    row_ix: 0,
+                    col_ix: 1,
+                },
+                &1,
+            ),
+            (
+                Ix2 {
+                    row_ix: 0,
+                    col_ix: 2,
+                },
+                &2,
+            ),
+            (
+                Ix2 {
+                    row_ix: 1,
+                    col_ix: 0,
+                },
+                &3,
+            ),
+            (
+                Ix2 {
+                    row_ix: 1,
+                    col_ix: 1,
+                },
+                &4,
+            ),
+            (
+                Ix2 {
+                    row_ix: 1,
+                    col_ix: 2,
+                },
+                &5,
+            ),
+            (
+                Ix2 {
+                    row_ix: 2,
+                    col_ix: 0,
+                },
+                &6,
+            ),
+            (
+                Ix2 {
+                    row_ix: 2,
+                    col_ix: 1,
+                },
+                &7,
+            ),
+            (
+                Ix2 {
+                    row_ix: 2,
+                    col_ix: 2,
+                },
+                &8,
+            ),
+        ];
+        let actual = v.indexed().collect::<Vec<(Ix2, &u8)>>();
+        assert_eq!(expected, actual);
+    }
 }
