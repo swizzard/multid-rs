@@ -38,6 +38,12 @@ impl<T, const N_ROWS: usize, const N_COLS: usize> V2<T, N_ROWS, N_COLS> {
     pub fn indexed(&self) -> V2Indexed<'_, T, N_ROWS, N_COLS> {
         V2Indexed::new(&self.data)
     }
+    pub fn mutate_at<F: Fn(&mut T)>(&mut self, Ix2 { row_ix, col_ix }: Ix2, f: F) {
+        let i = self.convert_ix(col_ix, row_ix);
+        if let Some(v) = self.data.get_mut(i) {
+            f(v);
+        }
+    }
     fn convert_ix(&self, col_ix: usize, row_ix: usize) -> usize {
         row_ix * N_COLS + col_ix
     }
@@ -373,7 +379,7 @@ mod tests {
         assert_eq!(expected, actual);
     }
     #[test]
-    fn test_v2_indices() {
+    fn test_indices() {
         let ixs: V2Indices<3, 3> = V2Indices::new();
         let expected = vec![
             Ix2 {
@@ -417,7 +423,7 @@ mod tests {
         assert_eq!(expected, actual);
     }
     #[test]
-    fn test_v2_rows() {
+    fn test_rows() {
         let data: Vec<u8> = (0..9).collect();
         let rows: V2Rows<u8, 3, 3> = V2Rows::new(&data);
         let expected: Vec<&[u8]> = vec![&[0, 1, 2], &[3, 4, 5], &[6, 7, 8]];
@@ -425,7 +431,7 @@ mod tests {
         assert_eq!(expected, actual);
     }
     #[test]
-    fn test_v2_cols() {
+    fn test_cols() {
         let data: Vec<u8> = (0..9).collect();
         let cols: V2Cols<u8, 3, 3> = V2Cols::new(&data);
         let expected: Vec<Vec<&u8>> = vec![vec![&0, &3, &6], vec![&1, &4, &7], vec![&2, &5, &8]];
@@ -465,6 +471,19 @@ mod tests {
             expected_bottom_middle, actual_bottom_middle,
             "bottom middle"
         );
+    }
+    #[test]
+    fn test_mutate_at() {
+        let mut v: V2<u8, 3, 3> = V2::new((0..=8).collect()).unwrap();
+        let expected = vec![0, 1, 9, 3, 4, 5, 6, 7, 8];
+        v.mutate_at(
+            Ix2 {
+                row_ix: 0,
+                col_ix: 2,
+            },
+            |v: &mut u8| *v = 9,
+        );
+        assert_eq!(expected, v.data);
     }
     #[test]
     fn test_indexed() {
