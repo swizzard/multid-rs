@@ -112,9 +112,20 @@ impl<T, const N_ROWS: usize, const N_COLS: usize> std::fmt::Display for V2<T, N_
 where
     T: std::fmt::Display,
 {
-    // prettyPrint
-    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        todo!()
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        let mut d = self.data.iter().enumerate();
+        write!(f, "{} ", d.next().unwrap().1)?;
+        for (i, v) in d {
+            let ni = i + 1;
+            if ni == self.data.len() {
+                write!(f, "{}", v)?;
+            } else if ni % N_COLS == 0 {
+                writeln!(f, "{}", v)?;
+            } else {
+                write!(f, "{} ", v)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -353,6 +364,13 @@ mod tests {
         let expected = vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
         let actual = v.add_row(r).unwrap();
         assert_eq!(expected, actual.data);
+    }
+    #[test]
+    fn test_display() {
+        let v: V2<u8, 3, 3> = V2::new((0..=8).collect()).unwrap();
+        let expected = "0 1 2\n3 4 5\n6 7 8";
+        let actual = format!("{}", v);
+        assert_eq!(expected, actual);
     }
     #[test]
     fn test_v2_indices() {
