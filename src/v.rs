@@ -35,6 +35,9 @@ impl<T, const N_ROWS: usize, const N_COLS: usize> V2<T, N_ROWS, N_COLS> {
     pub fn neighbors_of(&self, ix: Ix2) -> V2Neighbors<'_, T, N_ROWS, N_COLS> {
         V2Neighbors::new(&self.data, ix)
     }
+    pub fn indexed(&self) -> V2Indexed<'_, T, N_ROWS, N_COLS> {
+        V2Indexed::new(&self.data)
+    }
     fn convert_ix(&self, col_ix: usize, row_ix: usize) -> usize {
         row_ix * N_COLS + col_ix
     }
@@ -423,11 +426,11 @@ fn test_neighbors() {
 pub struct V2Indexed<'a, T, const N_ROWS: usize, const N_COLS: usize> {
     indices: V2Indices<N_ROWS, N_COLS>,
     i: usize,
-    data: &'a T,
+    data: &'a [T],
 }
 
 impl<'a, T, const N_ROWS: usize, const N_COLS: usize> V2Indexed<'a, T, N_ROWS, N_COLS> {
-    fn new(data: &'a T) -> Self {
+    fn new(data: &'a [T]) -> Self {
         Self {
             indices: V2Indices::new(),
             i: 0,
@@ -436,3 +439,91 @@ impl<'a, T, const N_ROWS: usize, const N_COLS: usize> V2Indexed<'a, T, N_ROWS, N
     }
 }
 
+impl<'a, T, const N_ROWS: usize, const N_COLS: usize> Iterator
+    for V2Indexed<'a, T, N_ROWS, N_COLS>
+{
+    type Item = (Ix2, &'a T);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(ix) = self.indices.next() {
+            let old_ix = self.i;
+            self.i += 1;
+            Some((ix, &self.data[old_ix]))
+        } else {
+            None
+        }
+    }
+}
+
+#[cfg(test)]
+#[test]
+fn test_indexed() {
+    let v: V2<u8, 3, 3> = V2::new((0..=8).collect()).unwrap();
+    let expected = vec![
+        (
+            Ix2 {
+                row_ix: 0,
+                col_ix: 0,
+            },
+            &0,
+        ),
+        (
+            Ix2 {
+                row_ix: 0,
+                col_ix: 1,
+            },
+            &1,
+        ),
+        (
+            Ix2 {
+                row_ix: 0,
+                col_ix: 2,
+            },
+            &2,
+        ),
+        (
+            Ix2 {
+                row_ix: 1,
+                col_ix: 0,
+            },
+            &3,
+        ),
+        (
+            Ix2 {
+                row_ix: 1,
+                col_ix: 1,
+            },
+            &4,
+        ),
+        (
+            Ix2 {
+                row_ix: 1,
+                col_ix: 2,
+            },
+            &5,
+        ),
+        (
+            Ix2 {
+                row_ix: 2,
+                col_ix: 0,
+            },
+            &6,
+        ),
+        (
+            Ix2 {
+                row_ix: 2,
+                col_ix: 1,
+            },
+            &7,
+        ),
+        (
+            Ix2 {
+                row_ix: 2,
+                col_ix: 2,
+            },
+            &8,
+        ),
+    ];
+    let actual = v.indexed().collect::<Vec<(Ix2, &u8)>>();
+    assert_eq!(expected, actual);
+}
