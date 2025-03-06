@@ -16,12 +16,15 @@ impl<T, const N_ROWS: usize, const N_COLS: usize> V2<T, N_ROWS, N_COLS> {
             Ok(Self { data })
         }
     }
-    pub fn get(&self, Ix2 { row_ix, col_ix }: Ix2) -> Option<&T> {
-        if row_ix > N_ROWS || col_ix > N_COLS {
+    fn get_ix(&self, Ix2 { row_ix, col_ix }: Ix2) -> Option<usize> {
+        if row_ix >= N_ROWS || col_ix >= N_COLS {
             None
         } else {
-            Some(&self.data[self.convert_ix(col_ix, row_ix)])
+            Some(self.convert_ix(col_ix, row_ix))
         }
+    }
+    pub fn get(&self, ix: Ix2) -> Option<&T> {
+        self.get_ix(ix).map(|i| &self.data[i])
     }
     pub fn indices(&self) -> V2Indices<N_ROWS, N_COLS> {
         V2Indices::new()
@@ -35,6 +38,13 @@ impl<T, const N_ROWS: usize, const N_COLS: usize> V2<T, N_ROWS, N_COLS> {
     pub fn neighbors_of(&self, ix: Ix2) -> V2Neighbors<'_, T, N_ROWS, N_COLS> {
         V2Neighbors::new(&self.data, ix)
     }
+
+    pub fn cardinal_neighbors_of(
+        &self,
+        ix: Ix2,
+    ) -> cardinal::V2CardinalNeighbors<'_, T, N_ROWS, N_COLS> {
+        cardinal::V2CardinalNeighbors::new(&self.data, ix)
+    }
     pub fn indexed(&self) -> V2Indexed<'_, T, N_ROWS, N_COLS> {
         V2Indexed::new(&self.data)
     }
@@ -44,8 +54,80 @@ impl<T, const N_ROWS: usize, const N_COLS: usize> V2<T, N_ROWS, N_COLS> {
             f(v);
         }
     }
+    pub fn north_ix(&self, ix: Ix2) -> Option<usize> {
+        self.north(ix).and_then(|i| self.get_ix(i))
+    }
+    pub fn north_of(&self, ix: Ix2) -> Option<&T> {
+        self.north(ix).and_then(|i| self.get(i))
+    }
+    pub fn south_ix(&self, ix: Ix2) -> Option<usize> {
+        self.south(ix).and_then(|i| self.get_ix(i))
+    }
+    pub fn south_of(&self, ix: Ix2) -> Option<&T> {
+        self.south(ix).and_then(|i| self.get(i))
+    }
+    pub fn east_ix(&self, ix: Ix2) -> Option<usize> {
+        self.east(ix).and_then(|i| self.get_ix(i))
+    }
+    pub fn east_of(&self, ix: Ix2) -> Option<&T> {
+        self.east(ix).and_then(|i| self.get(i))
+    }
+    pub fn west_ix(&self, ix: Ix2) -> Option<usize> {
+        self.west(ix).and_then(|i| self.get_ix(i))
+    }
+    pub fn west_of(&self, ix: Ix2) -> Option<&T> {
+        self.west(ix).and_then(|i| self.get(i))
+    }
+    pub fn northeast_ix(&self, ix: Ix2) -> Option<usize> {
+        self.northeast(ix).and_then(|i| self.get_ix(i))
+    }
+    pub fn northeast_of(&self, ix: Ix2) -> Option<&T> {
+        self.northeast(ix).and_then(|i| self.get(i))
+    }
+    pub fn northwest_ix(&self, ix: Ix2) -> Option<usize> {
+        self.northwest(ix).and_then(|i| self.get_ix(i))
+    }
+    pub fn northwest_of(&self, ix: Ix2) -> Option<&T> {
+        self.northwest(ix).and_then(|i| self.get(i))
+    }
+    pub fn southeast_ix(&self, ix: Ix2) -> Option<usize> {
+        self.southeast(ix).and_then(|i| self.get_ix(i))
+    }
+    pub fn southeast_of(&self, ix: Ix2) -> Option<&T> {
+        self.southeast(ix).and_then(|i| self.get(i))
+    }
+    pub fn southwest_ix(&self, ix: Ix2) -> Option<usize> {
+        self.southwest(ix).and_then(|i| self.get_ix(i))
+    }
+    pub fn southwest_of(&self, ix: Ix2) -> Option<&T> {
+        self.southwest(ix).and_then(|i| self.get(i))
+    }
     fn convert_ix(&self, col_ix: usize, row_ix: usize) -> usize {
         row_ix * N_COLS + col_ix
+    }
+    fn north(&self, ix: Ix2) -> Option<Ix2> {
+        ix.dec_row()
+    }
+    fn south(&self, ix: Ix2) -> Option<Ix2> {
+        ix.inc_row()
+    }
+    fn east(&self, ix: Ix2) -> Option<Ix2> {
+        ix.inc_col()
+    }
+    fn west(&self, ix: Ix2) -> Option<Ix2> {
+        ix.dec_col()
+    }
+    fn northeast(&self, ix: Ix2) -> Option<Ix2> {
+        ix.dec_row().and_then(|i| i.dec_col())
+    }
+    fn northwest(&self, ix: Ix2) -> Option<Ix2> {
+        ix.dec_row().and_then(|i| i.inc_col())
+    }
+    fn southeast(&self, ix: Ix2) -> Option<Ix2> {
+        ix.inc_row().and_then(|i| i.dec_col())
+    }
+    fn southwest(&self, ix: Ix2) -> Option<Ix2> {
+        ix.inc_row().and_then(|i| i.inc_col())
     }
 }
 impl<T, const N_ROWS: usize, const N_COLS: usize> V2<T, N_ROWS, N_COLS>
@@ -351,6 +433,116 @@ impl<'a, T, const N_ROWS: usize, const N_COLS: usize> Iterator
     }
 }
 
+mod cardinal {
+    use crate::ix::Ix2;
+    #[derive(Copy, Clone, PartialEq, Eq)]
+    enum NeighborDirection {
+        N,
+        S,
+        E,
+        W,
+    }
+
+    impl NeighborDirection {
+        fn new() -> Option<Self> {
+            Some(Self::N)
+        }
+        fn next(&self) -> Option<Self> {
+            match self {
+                Self::N => Some(Self::E),
+                Self::E => Some(Self::S),
+                Self::S => Some(Self::W),
+                Self::W => None,
+            }
+        }
+    }
+
+    pub struct V2CardinalNeighbors<'a, T, const N_ROWS: usize, const N_COLS: usize> {
+        data: &'a [T],
+        center_col_ix: usize,
+        center_row_ix: usize,
+        direction: Option<NeighborDirection>,
+    }
+
+    impl<'a, T, const N_ROWS: usize, const N_COLS: usize> V2CardinalNeighbors<'a, T, N_ROWS, N_COLS> {
+        pub fn new(data: &'a [T], Ix2 { row_ix, col_ix }: Ix2) -> Self {
+            Self {
+                data,
+                center_col_ix: col_ix,
+                center_row_ix: row_ix,
+                direction: NeighborDirection::new(),
+            }
+        }
+        fn dec_col(&self) -> Option<usize> {
+            if self.center_col_ix == 0 {
+                None
+            } else {
+                Some(self.center_col_ix - 1)
+            }
+        }
+        fn inc_col(&self) -> Option<usize> {
+            if self.center_col_ix == N_COLS - 1 {
+                None
+            } else {
+                Some(self.center_col_ix + 1)
+            }
+        }
+        fn dec_row(&self) -> Option<usize> {
+            if self.center_row_ix == 0 {
+                None
+            } else {
+                Some(self.center_row_ix - 1)
+            }
+        }
+        fn inc_row(&self) -> Option<usize> {
+            if self.center_row_ix == N_ROWS - 1 {
+                None
+            } else {
+                Some(self.center_row_ix + 1)
+            }
+        }
+        fn get_north(&self) -> Option<usize> {
+            self.dec_row().map(|nr| nr * N_COLS + self.center_col_ix)
+        }
+        fn get_south(&self) -> Option<usize> {
+            self.inc_row().map(|nr| nr * N_COLS * self.center_col_ix)
+        }
+        fn get_east(&self) -> Option<usize> {
+            self.inc_col().map(|nc| self.center_row_ix * N_COLS + nc)
+        }
+        fn get_west(&self) -> Option<usize> {
+            self.dec_col().map(|nc| self.center_row_ix * N_COLS + nc)
+        }
+        fn get_dir(&self, direction: NeighborDirection) -> Option<usize> {
+            match direction {
+                NeighborDirection::N => self.get_north(),
+                NeighborDirection::S => self.get_south(),
+                NeighborDirection::E => self.get_east(),
+                NeighborDirection::W => self.get_west(),
+            }
+        }
+        fn next_direction(&mut self) {
+            self.direction = self.direction.and_then(|d: NeighborDirection| d.next());
+        }
+    }
+
+    impl<'a, T, const N_ROWS: usize, const N_COLS: usize> Iterator
+        for V2CardinalNeighbors<'a, T, N_ROWS, N_COLS>
+    {
+        type Item = &'a T;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            while let Some(dir) = self.direction {
+                self.next_direction();
+                if let Some(d) = self.get_dir(dir) {
+                    return Some(&self.data[d]);
+                }
+            }
+            None
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -555,5 +747,76 @@ mod tests {
         ];
         let actual = v.indexed().collect::<Vec<(Ix2, &u8)>>();
         assert_eq!(expected, actual);
+    }
+    #[test]
+    fn test_north() {
+        let v2: V2<u8, 3, 3> = V2::new((0..=8).collect::<Vec<u8>>()).unwrap();
+        assert!(
+            v2.north_of(Ix2 {
+                row_ix: 0,
+                col_ix: 0
+            })
+            .is_none()
+        );
+        assert_eq!(
+            v2.north_of(Ix2 {
+                row_ix: 1,
+                col_ix: 0
+            }),
+            Some(&0)
+        );
+    }
+    #[test]
+    fn test_south() {
+        let v2: V2<u8, 3, 3> = V2::new((0..=8).collect::<Vec<u8>>()).unwrap();
+        assert!(
+            v2.south_of(Ix2 {
+                row_ix: 2,
+                col_ix: 0
+            })
+            .is_none()
+        );
+        assert_eq!(
+            v2.south_of(Ix2 {
+                row_ix: 1,
+                col_ix: 0
+            }),
+            Some(&6)
+        );
+    }
+    #[test]
+    fn test_east() {
+        let v2: V2<u8, 3, 3> = V2::new((0..=8).collect::<Vec<u8>>()).unwrap();
+        let bad = v2.east_of(Ix2 {
+            row_ix: 2,
+            col_ix: 2,
+        });
+        println!("bad {bad:?}");
+        assert!(bad.is_none());
+        assert_eq!(
+            v2.east_of(Ix2 {
+                row_ix: 1,
+                col_ix: 0
+            }),
+            Some(&4)
+        );
+    }
+    #[test]
+    fn test_west() {
+        let v2: V2<u8, 3, 3> = V2::new((0..=8).collect::<Vec<u8>>()).unwrap();
+        assert!(
+            v2.west_of(Ix2 {
+                row_ix: 0,
+                col_ix: 0
+            })
+            .is_none()
+        );
+        assert_eq!(
+            v2.west_of(Ix2 {
+                row_ix: 2,
+                col_ix: 2
+            }),
+            Some(&7)
+        );
     }
 }
