@@ -1,10 +1,16 @@
+//! # custom index types
+
+/// 2d index
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Ix2 {
-    pub(crate) row_ix: usize,
-    pub(crate) col_ix: usize,
+    /// y-coordinate
+    pub row_ix: usize,
+    /// x-coordinate
+    pub col_ix: usize,
 }
 
 impl Ix2 {
+    /// increase row by 1, returning `None` if out of bounds
     pub fn inc_row(&self) -> Option<Self> {
         if self.row_ix == usize::MAX {
             None
@@ -15,6 +21,7 @@ impl Ix2 {
             })
         }
     }
+    /// increase col by 1, returning `None` if out of bounds
     pub fn inc_col(&self) -> Option<Self> {
         if self.col_ix == usize::MAX {
             None
@@ -25,6 +32,7 @@ impl Ix2 {
             })
         }
     }
+    /// decrease row by 1, returning `None` if out of bounds
     pub fn dec_row(&self) -> Option<Self> {
         if self.row_ix == 0 {
             None
@@ -35,6 +43,7 @@ impl Ix2 {
             })
         }
     }
+    /// decrease col by 1, returning `None` if out of bounds
     pub fn dec_col(&self) -> Option<Self> {
         if self.col_ix == 0 {
             None
