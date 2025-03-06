@@ -26,6 +26,9 @@ impl<T, const N_ROWS: usize, const N_COLS: usize> V2<T, N_ROWS, N_COLS> {
     pub fn get(&self, ix: Ix2) -> Option<&T> {
         self.get_ix(ix).map(|i| &self.data[i])
     }
+    pub fn get_mut(&mut self, ix: Ix2) -> Option<&mut T> {
+        self.get_ix(ix).map(|i| &mut self.data[i])
+    }
     pub fn indices(&self) -> V2Indices<N_ROWS, N_COLS> {
         V2Indices::new()
     }
@@ -54,80 +57,80 @@ impl<T, const N_ROWS: usize, const N_COLS: usize> V2<T, N_ROWS, N_COLS> {
             f(v);
         }
     }
-    pub fn north_ix(&self, ix: Ix2) -> Option<usize> {
-        self.north(ix).and_then(|i| self.get_ix(i))
-    }
     pub fn north_of(&self, ix: Ix2) -> Option<&T> {
-        self.north(ix).and_then(|i| self.get(i))
-    }
-    pub fn south_ix(&self, ix: Ix2) -> Option<usize> {
-        self.south(ix).and_then(|i| self.get_ix(i))
+        self.north_ix(ix).and_then(|i| self.get(i))
     }
     pub fn south_of(&self, ix: Ix2) -> Option<&T> {
-        self.south(ix).and_then(|i| self.get(i))
-    }
-    pub fn east_ix(&self, ix: Ix2) -> Option<usize> {
-        self.east(ix).and_then(|i| self.get_ix(i))
+        self.south_ix(ix).and_then(|i| self.get(i))
     }
     pub fn east_of(&self, ix: Ix2) -> Option<&T> {
-        self.east(ix).and_then(|i| self.get(i))
-    }
-    pub fn west_ix(&self, ix: Ix2) -> Option<usize> {
-        self.west(ix).and_then(|i| self.get_ix(i))
+        self.east_ix(ix).and_then(|i| self.get(i))
     }
     pub fn west_of(&self, ix: Ix2) -> Option<&T> {
-        self.west(ix).and_then(|i| self.get(i))
-    }
-    pub fn northeast_ix(&self, ix: Ix2) -> Option<usize> {
-        self.northeast(ix).and_then(|i| self.get_ix(i))
+        self.west_ix(ix).and_then(|i| self.get(i))
     }
     pub fn northeast_of(&self, ix: Ix2) -> Option<&T> {
-        self.northeast(ix).and_then(|i| self.get(i))
-    }
-    pub fn northwest_ix(&self, ix: Ix2) -> Option<usize> {
-        self.northwest(ix).and_then(|i| self.get_ix(i))
+        self.northeast_ix(ix).and_then(|i| self.get(i))
     }
     pub fn northwest_of(&self, ix: Ix2) -> Option<&T> {
-        self.northwest(ix).and_then(|i| self.get(i))
-    }
-    pub fn southeast_ix(&self, ix: Ix2) -> Option<usize> {
-        self.southeast(ix).and_then(|i| self.get_ix(i))
+        self.northwest_ix(ix).and_then(|i| self.get(i))
     }
     pub fn southeast_of(&self, ix: Ix2) -> Option<&T> {
-        self.southeast(ix).and_then(|i| self.get(i))
-    }
-    pub fn southwest_ix(&self, ix: Ix2) -> Option<usize> {
-        self.southwest(ix).and_then(|i| self.get_ix(i))
+        self.southeast_ix(ix).and_then(|i| self.get(i))
     }
     pub fn southwest_of(&self, ix: Ix2) -> Option<&T> {
-        self.southwest(ix).and_then(|i| self.get(i))
+        self.southwest_ix(ix).and_then(|i| self.get(i))
+    }
+    pub fn north_of_mut(&mut self, ix: Ix2) -> Option<&mut T> {
+        self.north_ix(ix).and_then(|i| self.get_mut(i))
+    }
+    pub fn south_of_mut(&mut self, ix: Ix2) -> Option<&mut T> {
+        self.south_ix(ix).and_then(|i| self.get_mut(i))
+    }
+    pub fn east_of_mut(&mut self, ix: Ix2) -> Option<&mut T> {
+        self.east_ix(ix).and_then(|i| self.get_mut(i))
+    }
+    pub fn west_of_mut(&mut self, ix: Ix2) -> Option<&mut T> {
+        self.west_ix(ix).and_then(|i| self.get_mut(i))
+    }
+    pub fn northeast_of_mut(&mut self, ix: Ix2) -> Option<&mut T> {
+        self.northeast_ix(ix).and_then(|i| self.get_mut(i))
+    }
+    pub fn northwest_of_mut(&mut self, ix: Ix2) -> Option<&mut T> {
+        self.northwest_ix(ix).and_then(|i| self.get_mut(i))
+    }
+    pub fn southeast_of_mut(&mut self, ix: Ix2) -> Option<&mut T> {
+        self.southeast_ix(ix).and_then(|i| self.get_mut(i))
+    }
+    pub fn southwest_of_mut(&mut self, ix: Ix2) -> Option<&mut T> {
+        self.southwest_ix(ix).and_then(|i| self.get_mut(i))
+    }
+    pub fn north_ix(&self, ix: Ix2) -> Option<Ix2> {
+        ix.dec_row()
+    }
+    pub fn south_ix(&self, ix: Ix2) -> Option<Ix2> {
+        ix.inc_row()
+    }
+    pub fn east_ix(&self, ix: Ix2) -> Option<Ix2> {
+        ix.inc_col()
+    }
+    pub fn west_ix(&self, ix: Ix2) -> Option<Ix2> {
+        ix.dec_col()
+    }
+    pub fn northeast_ix(&self, ix: Ix2) -> Option<Ix2> {
+        ix.dec_row().and_then(|i| i.dec_col())
+    }
+    pub fn northwest_ix(&self, ix: Ix2) -> Option<Ix2> {
+        ix.dec_row().and_then(|i| i.inc_col())
+    }
+    pub fn southeast_ix(&self, ix: Ix2) -> Option<Ix2> {
+        ix.inc_row().and_then(|i| i.dec_col())
+    }
+    pub fn southwest_ix(&self, ix: Ix2) -> Option<Ix2> {
+        ix.inc_row().and_then(|i| i.inc_col())
     }
     fn convert_ix(&self, col_ix: usize, row_ix: usize) -> usize {
         row_ix * N_COLS + col_ix
-    }
-    fn north(&self, ix: Ix2) -> Option<Ix2> {
-        ix.dec_row()
-    }
-    fn south(&self, ix: Ix2) -> Option<Ix2> {
-        ix.inc_row()
-    }
-    fn east(&self, ix: Ix2) -> Option<Ix2> {
-        ix.inc_col()
-    }
-    fn west(&self, ix: Ix2) -> Option<Ix2> {
-        ix.dec_col()
-    }
-    fn northeast(&self, ix: Ix2) -> Option<Ix2> {
-        ix.dec_row().and_then(|i| i.dec_col())
-    }
-    fn northwest(&self, ix: Ix2) -> Option<Ix2> {
-        ix.dec_row().and_then(|i| i.inc_col())
-    }
-    fn southeast(&self, ix: Ix2) -> Option<Ix2> {
-        ix.inc_row().and_then(|i| i.dec_col())
-    }
-    fn southwest(&self, ix: Ix2) -> Option<Ix2> {
-        ix.inc_row().and_then(|i| i.inc_col())
     }
 }
 impl<T, const N_ROWS: usize, const N_COLS: usize> V2<T, N_ROWS, N_COLS>
@@ -749,74 +752,168 @@ mod tests {
         assert_eq!(expected, actual);
     }
     #[test]
+    fn test_get() {
+        let v2: V2<u8, 3, 3> = V2::new((0..=8).collect::<Vec<u8>>()).unwrap();
+        assert!(
+            v2.get(Ix2 {
+                row_ix: 2,
+                col_ix: 3
+            })
+            .is_none()
+        );
+        assert!(
+            v2.get(Ix2 {
+                row_ix: 3,
+                col_ix: 2
+            })
+            .is_none()
+        );
+        assert_eq!(
+            v2.get(Ix2 {
+                row_ix: 2,
+                col_ix: 2
+            }),
+            Some(&8)
+        );
+    }
+    #[test]
     fn test_north() {
         let v2: V2<u8, 3, 3> = V2::new((0..=8).collect::<Vec<u8>>()).unwrap();
         assert!(
-            v2.north_of(Ix2 {
+            v2.north_ix(Ix2 {
                 row_ix: 0,
                 col_ix: 0
             })
             .is_none()
         );
         assert_eq!(
-            v2.north_of(Ix2 {
+            v2.north_ix(Ix2 {
                 row_ix: 1,
                 col_ix: 0
             }),
-            Some(&0)
+            Some(Ix2 {
+                row_ix: 0,
+                col_ix: 0
+            })
         );
     }
     #[test]
     fn test_south() {
         let v2: V2<u8, 3, 3> = V2::new((0..=8).collect::<Vec<u8>>()).unwrap();
-        assert!(
-            v2.south_of(Ix2 {
-                row_ix: 2,
-                col_ix: 0
-            })
-            .is_none()
-        );
         assert_eq!(
-            v2.south_of(Ix2 {
-                row_ix: 1,
-                col_ix: 0
+            v2.south_ix(Ix2 {
+                row_ix: 2,
+                col_ix: 2
             }),
-            Some(&6)
+            Some(Ix2 {
+                row_ix: 3,
+                col_ix: 2
+            })
         );
     }
     #[test]
     fn test_east() {
         let v2: V2<u8, 3, 3> = V2::new((0..=8).collect::<Vec<u8>>()).unwrap();
-        let bad = v2.east_of(Ix2 {
-            row_ix: 2,
-            col_ix: 2,
-        });
-        println!("bad {bad:?}");
-        assert!(bad.is_none());
         assert_eq!(
-            v2.east_of(Ix2 {
-                row_ix: 1,
-                col_ix: 0
+            v2.east_ix(Ix2 {
+                row_ix: 2,
+                col_ix: 2
             }),
-            Some(&4)
+            Some(Ix2 {
+                row_ix: 2,
+                col_ix: 3
+            })
         );
     }
     #[test]
     fn test_west() {
         let v2: V2<u8, 3, 3> = V2::new((0..=8).collect::<Vec<u8>>()).unwrap();
         assert!(
-            v2.west_of(Ix2 {
+            v2.west_ix(Ix2 {
                 row_ix: 0,
                 col_ix: 0
             })
             .is_none()
         );
         assert_eq!(
-            v2.west_of(Ix2 {
+            v2.west_ix(Ix2 {
                 row_ix: 2,
                 col_ix: 2
             }),
-            Some(&7)
+            Some(Ix2 {
+                row_ix: 2,
+                col_ix: 1
+            })
+        );
+    }
+    #[test]
+    fn test_northwest() {
+        let v2: V2<u8, 3, 3> = V2::new((0..=8).collect::<Vec<u8>>()).unwrap();
+        assert!(
+            v2.northwest_of(Ix2 {
+                row_ix: 0,
+                col_ix: 1
+            })
+            .is_none()
+        );
+        assert_eq!(
+            v2.northwest_ix(Ix2 {
+                row_ix: 2,
+                col_ix: 2
+            }),
+            Some(Ix2 {
+                row_ix: 1,
+                col_ix: 1
+            })
+        );
+    }
+    #[test]
+    fn test_northeast() {
+        let v2: V2<u8, 3, 3> = V2::new((0..=8).collect::<Vec<u8>>()).unwrap();
+        assert!(
+            v2.northeast_ix(Ix2 {
+                row_ix: 0,
+                col_ix: 1
+            })
+            .is_none()
+        );
+        assert_eq!(
+            v2.northeast_ix(Ix2 {
+                row_ix: 2,
+                col_ix: 0
+            }),
+            Some(Ix2 {
+                row_ix: 1,
+                col_ix: 1
+            })
+        );
+    }
+    #[test]
+    fn test_southwest() {
+        let v2: V2<u8, 3, 3> = V2::new((0..=8).collect::<Vec<u8>>()).unwrap();
+        assert_eq!(
+            v2.southwest_ix(Ix2 {
+                row_ix: 2,
+                col_ix: 2
+            }),
+            Some(Ix2 {
+                row_ix: 3,
+                col_ix: 1
+            })
+        );
+    }
+    #[test]
+    fn test_southeast() {
+        let v2: V2<u8, 3, 3> = V2::new((0..=8).collect::<Vec<u8>>()).unwrap();
+        assert_eq!(
+            v2.southeast_ix(Ix2 {
+                row_ix: 2,
+                col_ix: 2
+            }),
+            Some(Ix2 {
+                row_ix: 3,
+                col_ix: 3
+            })
         );
     }
 }
