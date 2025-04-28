@@ -36,8 +36,8 @@ impl<T, const N_ROWS: usize, const N_COLS: usize> V2<T, N_ROWS, N_COLS> {
     pub fn get_mut(&mut self, ix: Ix2) -> Option<&mut T> {
         self.get_ix(ix).map(|i| &mut self.data[i])
     }
-    /// an iterator over the vector's indices left to right, top to bottom
-    pub fn indices(&self) -> V2Indices<N_ROWS, N_COLS> {
+    /// an iterator over indices from left to right, top to bottom
+    pub fn indices() -> V2Indices<N_ROWS, N_COLS> {
         V2Indices::new()
     }
     /// an iterator over the vector's rows from top to bottom
