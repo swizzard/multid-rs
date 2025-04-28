@@ -21,11 +21,11 @@ impl<T, const N_ROWS: usize, const N_COLS: usize> V2<T, N_ROWS, N_COLS> {
             Ok(Self { data })
         }
     }
-    fn get_ix(&self, Ix2 { row_ix, col_ix }: Ix2) -> Option<usize> {
-        if row_ix >= N_ROWS || col_ix >= N_COLS {
+    fn get_ix(&self, ix: Ix2) -> Option<usize> {
+        if !V2::<T, N_ROWS, N_COLS>::in_bounds(ix) {
             None
         } else {
-            Some(self.convert_ix(col_ix, row_ix))
+            Some(V2::<T, N_ROWS, N_COLS>::convert_ix(ix.col_ix, ix.row_ix))
         }
     }
     /// get a value by 2d index
@@ -88,109 +88,119 @@ impl<T, const N_ROWS: usize, const N_COLS: usize> V2<T, N_ROWS, N_COLS> {
     }
     /// alter a value in-place
     pub fn mutate_at<F: Fn(&mut T)>(&mut self, Ix2 { row_ix, col_ix }: Ix2, f: F) {
-        let i = self.convert_ix(col_ix, row_ix);
+        let i = V2::<T, N_ROWS, N_COLS>::convert_ix(col_ix, row_ix);
         if let Some(v) = self.data.get_mut(i) {
             f(v);
         }
     }
     /// possibly get a reference to the value "north" (same column, previous row)
     pub fn north_of(&self, ix: Ix2) -> Option<&T> {
-        self.north_ix(ix).and_then(|i| self.get(i))
+        V2::<T, N_ROWS, N_COLS>::north_ix(ix).and_then(|i| self.get(i))
     }
     /// possibly get a reference to the value "south" (same column, following row)
     pub fn south_of(&self, ix: Ix2) -> Option<&T> {
-        self.south_ix(ix).and_then(|i| self.get(i))
+        V2::<u8, 3, 3>::south_ix(ix).and_then(|i| self.get(i))
     }
     /// possibly get a reference to the value "east" (same row, following column)
     pub fn east_of(&self, ix: Ix2) -> Option<&T> {
-        self.east_ix(ix).and_then(|i| self.get(i))
+        V2::<T, N_ROWS, N_COLS>::east_ix(ix).and_then(|i| self.get(i))
     }
     /// possibly get a reference to the value "west" (same row, previous column)
     pub fn west_of(&self, ix: Ix2) -> Option<&T> {
-        self.west_ix(ix).and_then(|i| self.get(i))
+        V2::<T, N_ROWS, N_COLS>::west_ix(ix).and_then(|i| self.get(i))
     }
     /// possibly get a reference to the value "northeast" (previous column, previous row)
     pub fn northeast_of(&self, ix: Ix2) -> Option<&T> {
-        self.northeast_ix(ix).and_then(|i| self.get(i))
+        V2::<T, N_ROWS, N_COLS>::northeast_ix(ix).and_then(|i| self.get(i))
     }
     /// possibly get a reference to the value "northwest" (previous column, previous row)
     pub fn northwest_of(&self, ix: Ix2) -> Option<&T> {
-        self.northwest_ix(ix).and_then(|i| self.get(i))
+        V2::<T, N_ROWS, N_COLS>::northwest_ix(ix).and_then(|i| self.get(i))
     }
     /// possibly get a reference to the value "southeast" (following column, following row)
     pub fn southeast_of(&self, ix: Ix2) -> Option<&T> {
-        self.southeast_ix(ix).and_then(|i| self.get(i))
+        V2::<T, N_ROWS, N_COLS>::southeast_ix(ix).and_then(|i| self.get(i))
     }
     /// possibly get a reference to the value "southwest" (following column, previous row)
     pub fn southwest_of(&self, ix: Ix2) -> Option<&T> {
-        self.southwest_ix(ix).and_then(|i| self.get(i))
+        V2::<T, N_ROWS, N_COLS>::southwest_ix(ix).and_then(|i| self.get(i))
     }
     /// possibly get a mutable reference to the value "north" (same column, previous row)
     pub fn north_of_mut(&mut self, ix: Ix2) -> Option<&mut T> {
-        self.north_ix(ix).and_then(|i| self.get_mut(i))
+        V2::<T, N_ROWS, N_COLS>::north_ix(ix).and_then(|i| self.get_mut(i))
     }
     /// possibly get a mutable reference to the value "south" (same column, following row)
     pub fn south_of_mut(&mut self, ix: Ix2) -> Option<&mut T> {
-        self.south_ix(ix).and_then(|i| self.get_mut(i))
+        V2::<T, N_ROWS, N_COLS>::south_ix(ix).and_then(|i| self.get_mut(i))
     }
     /// possibly get a mutable reference to the value "east" (same row, following column)
     pub fn east_of_mut(&mut self, ix: Ix2) -> Option<&mut T> {
-        self.east_ix(ix).and_then(|i| self.get_mut(i))
+        V2::<T, N_ROWS, N_COLS>::east_ix(ix).and_then(|i| self.get_mut(i))
     }
     /// possibly get a mutable reference to the value "west" (same row, previous column)
     pub fn west_of_mut(&mut self, ix: Ix2) -> Option<&mut T> {
-        self.west_ix(ix).and_then(|i| self.get_mut(i))
+        V2::<T, N_ROWS, N_COLS>::west_ix(ix).and_then(|i| self.get_mut(i))
     }
     /// possibly get a mutable reference to the value "northeast" (previous column, previous row)
     pub fn northeast_of_mut(&mut self, ix: Ix2) -> Option<&mut T> {
-        self.northeast_ix(ix).and_then(|i| self.get_mut(i))
+        V2::<T, N_ROWS, N_COLS>::northeast_ix(ix).and_then(|i| self.get_mut(i))
     }
     /// possibly get a mutable reference to the value "northwest" (previous column, previous row)
     pub fn northwest_of_mut(&mut self, ix: Ix2) -> Option<&mut T> {
-        self.northwest_ix(ix).and_then(|i| self.get_mut(i))
+        V2::<T, N_ROWS, N_COLS>::northwest_ix(ix).and_then(|i| self.get_mut(i))
     }
     /// possibly get a mutable reference to the value "southeast" (following column, following row)
     pub fn southeast_of_mut(&mut self, ix: Ix2) -> Option<&mut T> {
-        self.southeast_ix(ix).and_then(|i| self.get_mut(i))
+        V2::<T, N_ROWS, N_COLS>::southeast_ix(ix).and_then(|i| self.get_mut(i))
     }
     /// possibly get a mutable reference to the value "southwest" (following column, previous row)
     pub fn southwest_of_mut(&mut self, ix: Ix2) -> Option<&mut T> {
-        self.southwest_ix(ix).and_then(|i| self.get_mut(i))
+        V2::<T, N_ROWS, N_COLS>::southwest_ix(ix).and_then(|i| self.get_mut(i))
     }
     /// possibly get the index "north" (same column, previous row)
-    pub fn north_ix(&self, ix: Ix2) -> Option<Ix2> {
-        ix.dec_row()
+    pub fn north_ix(ix: Ix2) -> Option<Ix2> {
+        ix.north()
+            .filter(|i| V2::<T, N_ROWS, N_COLS>::in_bounds(*i))
     }
     /// possibly get the index "south" (same column, following row)
-    pub fn south_ix(&self, ix: Ix2) -> Option<Ix2> {
-        ix.inc_row()
+    pub fn south_ix(ix: Ix2) -> Option<Ix2> {
+        ix.south()
+            .filter(|i| V2::<T, N_ROWS, N_COLS>::in_bounds(*i))
     }
     /// possibly get the index "east" (same row, following column)
-    pub fn east_ix(&self, ix: Ix2) -> Option<Ix2> {
-        ix.inc_col()
+    pub fn east_ix(ix: Ix2) -> Option<Ix2> {
+        ix.east().filter(|i| V2::<T, N_ROWS, N_COLS>::in_bounds(*i))
     }
     /// possibly get the index "west" (same row, previous column)
-    pub fn west_ix(&self, ix: Ix2) -> Option<Ix2> {
-        ix.dec_col()
+    pub fn west_ix(ix: Ix2) -> Option<Ix2> {
+        ix.west().filter(|i| V2::<T, N_ROWS, N_COLS>::in_bounds(*i))
     }
     /// possibly get the index "northeast" (following column, previous row)
-    pub fn northeast_ix(&self, ix: Ix2) -> Option<Ix2> {
-        ix.dec_row().and_then(|i| i.inc_col())
+    pub fn northeast_ix(ix: Ix2) -> Option<Ix2> {
+        ix.northeast()
+            .filter(|i| V2::<T, N_ROWS, N_COLS>::in_bounds(*i))
     }
     /// possibly get the index "northwest" (previous column, previous row)
-    pub fn northwest_ix(&self, ix: Ix2) -> Option<Ix2> {
-        ix.dec_row().and_then(|i| i.dec_col())
+    pub fn northwest_ix(ix: Ix2) -> Option<Ix2> {
+        ix.northwest()
+            .filter(|i| V2::<T, N_ROWS, N_COLS>::in_bounds(*i))
     }
     /// possibly get the index "southeast" (following column, following row)
-    pub fn southeast_ix(&self, ix: Ix2) -> Option<Ix2> {
-        ix.inc_row().and_then(|i| i.inc_col())
+    pub fn southeast_ix(ix: Ix2) -> Option<Ix2> {
+        ix.southeast()
+            .filter(|i| V2::<T, N_ROWS, N_COLS>::in_bounds(*i))
     }
     /// possibly get the index "southwest" (previous column, following row)
-    pub fn southwest_ix(&self, ix: Ix2) -> Option<Ix2> {
-        ix.inc_row().and_then(|i| i.dec_col())
+    pub fn southwest_ix(ix: Ix2) -> Option<Ix2> {
+        ix.southwest()
+            .filter(|i| V2::<T, N_ROWS, N_COLS>::in_bounds(*i))
     }
-    fn convert_ix(&self, col_ix: usize, row_ix: usize) -> usize {
+    fn convert_ix(col_ix: usize, row_ix: usize) -> usize {
         row_ix * N_COLS + col_ix
+    }
+    #[inline]
+    const fn in_bounds(Ix2 { col_ix, row_ix }: Ix2) -> bool {
+        col_ix < N_COLS && row_ix < N_ROWS
     }
 }
 impl<T, const N_ROWS: usize, const N_COLS: usize> V2<T, N_ROWS, N_COLS>
@@ -847,16 +857,15 @@ mod tests {
     }
     #[test]
     fn test_north() {
-        let v2: V2<u8, 3, 3> = V2::new((0..=8).collect::<Vec<u8>>()).unwrap();
         assert!(
-            v2.north_ix(Ix2 {
+            V2::<u8, 3, 3>::north_ix(Ix2 {
                 row_ix: 0,
                 col_ix: 0
             })
             .is_none()
         );
         assert_eq!(
-            v2.north_ix(Ix2 {
+            V2::<u8, 3, 3>::north_ix(Ix2 {
                 row_ix: 1,
                 col_ix: 0
             }),
@@ -868,44 +877,55 @@ mod tests {
     }
     #[test]
     fn test_south() {
-        let v2: V2<u8, 3, 3> = V2::new((0..=8).collect::<Vec<u8>>()).unwrap();
-        assert_eq!(
-            v2.south_ix(Ix2 {
+        assert!(
+            V2::<u8, 3, 3>::south_ix(Ix2 {
                 row_ix: 2,
+                col_ix: 2
+            })
+            .is_none()
+        );
+        assert_eq!(
+            V2::<u8, 3, 3>::south_ix(Ix2 {
+                row_ix: 1,
                 col_ix: 2
             }),
             Some(Ix2 {
-                row_ix: 3,
+                row_ix: 2,
                 col_ix: 2
             })
-        );
+        )
     }
     #[test]
     fn test_east() {
-        let v2: V2<u8, 3, 3> = V2::new((0..=8).collect::<Vec<u8>>()).unwrap();
-        assert_eq!(
-            v2.east_ix(Ix2 {
-                row_ix: 2,
+        assert!(
+            V2::<u8, 3, 3>::east_ix(Ix2 {
+                row_ix: 1,
                 col_ix: 2
+            })
+            .is_none()
+        );
+        assert_eq!(
+            V2::<u8, 3, 3>::east_ix(Ix2 {
+                row_ix: 1,
+                col_ix: 1
             }),
             Some(Ix2 {
-                row_ix: 2,
-                col_ix: 3
+                row_ix: 1,
+                col_ix: 2
             })
-        );
+        )
     }
     #[test]
     fn test_west() {
-        let v2: V2<u8, 3, 3> = V2::new((0..=8).collect::<Vec<u8>>()).unwrap();
         assert!(
-            v2.west_ix(Ix2 {
+            V2::<u8, 3, 3>::west_ix(Ix2 {
                 row_ix: 0,
                 col_ix: 0
             })
             .is_none()
         );
         assert_eq!(
-            v2.west_ix(Ix2 {
+            V2::<u8, 3, 3>::west_ix(Ix2 {
                 row_ix: 2,
                 col_ix: 2
             }),
@@ -917,16 +937,15 @@ mod tests {
     }
     #[test]
     fn test_northwest() {
-        let v2: V2<u8, 3, 3> = V2::new((0..=8).collect::<Vec<u8>>()).unwrap();
         assert!(
-            v2.northwest_of(Ix2 {
+            V2::<u8, 3, 3>::northwest_ix(Ix2 {
                 row_ix: 0,
                 col_ix: 1
             })
             .is_none()
         );
         assert_eq!(
-            v2.northwest_ix(Ix2 {
+            V2::<u8, 3, 3>::northwest_ix(Ix2 {
                 row_ix: 2,
                 col_ix: 2
             }),
@@ -938,51 +957,83 @@ mod tests {
     }
     #[test]
     fn test_northeast() {
-        let v2: V2<u8, 3, 3> = V2::new((0..=8).collect::<Vec<u8>>()).unwrap();
         assert!(
-            v2.northeast_ix(Ix2 {
+            V2::<u8, 3, 3>::northeast_ix(Ix2 {
                 row_ix: 0,
                 col_ix: 1
             })
             .is_none()
         );
-        assert_eq!(
-            v2.northeast_ix(Ix2 {
+        assert!(
+            V2::<u8, 3, 3>::northeast_ix(Ix2 {
                 row_ix: 2,
                 col_ix: 2
+            })
+            .is_none()
+        );
+        assert_eq!(
+            V2::<u8, 3, 3>::northeast_ix(Ix2 {
+                row_ix: 2,
+                col_ix: 1
             }),
             Some(Ix2 {
                 row_ix: 1,
-                col_ix: 3
+                col_ix: 2
             })
-        );
+        )
     }
     #[test]
     fn test_southwest() {
-        let v2: V2<u8, 3, 3> = V2::new((0..=8).collect::<Vec<u8>>()).unwrap();
-        assert_eq!(
-            v2.southwest_ix(Ix2 {
+        assert!(
+            V2::<u8, 3, 3>::southwest_ix(Ix2 {
                 row_ix: 2,
                 col_ix: 2
+            })
+            .is_none()
+        );
+        assert!(
+            V2::<u8, 3, 3>::southwest_ix(Ix2 {
+                row_ix: 1,
+                col_ix: 0
+            })
+            .is_none()
+        );
+        assert_eq!(
+            V2::<u8, 3, 3>::southwest_ix(Ix2 {
+                row_ix: 1,
+                col_ix: 1
             }),
             Some(Ix2 {
-                row_ix: 3,
-                col_ix: 1
+                row_ix: 2,
+                col_ix: 0
             })
-        );
+        )
     }
     #[test]
     fn test_southeast() {
-        let v2: V2<u8, 3, 3> = V2::new((0..=8).collect::<Vec<u8>>()).unwrap();
-        assert_eq!(
-            v2.southeast_ix(Ix2 {
+        assert!(
+            V2::<u8, 3, 3>::southeast_ix(Ix2 {
                 row_ix: 2,
                 col_ix: 2
+            })
+            .is_none()
+        );
+        assert!(
+            V2::<u8, 3, 3>::southeast_ix(Ix2 {
+                row_ix: 1,
+                col_ix: 2
+            })
+            .is_none()
+        );
+        assert_eq!(
+            V2::<u8, 3, 3>::southeast_ix(Ix2 {
+                row_ix: 1,
+                col_ix: 0
             }),
             Some(Ix2 {
-                row_ix: 3,
-                col_ix: 3
+                row_ix: 2,
+                col_ix: 1
             })
-        );
+        )
     }
 }
