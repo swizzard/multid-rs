@@ -8,3 +8,9 @@ pub enum VError {
     #[error("Size mismatch error: expected {expected:?}, got {actual:?}")]
     SizingError { expected: usize, actual: usize },
 }
+
+impl VError {
+    pub fn size_error(expected: usize, actual: usize) -> Self {
+        VError::SizingError { expected, actual }
+    }
+}

@@ -1,6 +1,7 @@
 //! 2d vector type, parameterized by number of rows and columns
 use crate::errors::VError;
-use crate::ix::Ix2;
+use crate::ix::{BoundedIx2, Ix2, V2Indices};
+use std::ops::{Index, IndexMut};
 
 /// 2d vector type, parameterized by number of rows and columns
 pub struct V2<T, const N_ROWS: usize, const N_COLS: usize> {
@@ -21,20 +22,15 @@ impl<T, const N_ROWS: usize, const N_COLS: usize> V2<T, N_ROWS, N_COLS> {
             Ok(Self { data })
         }
     }
-    fn get_ix(&self, ix: Ix2) -> Option<usize> {
-        if !V2::<T, N_ROWS, N_COLS>::in_bounds(ix) {
-            None
-        } else {
-            Some(V2::<T, N_ROWS, N_COLS>::convert_ix(ix.col_ix, ix.row_ix))
-        }
-    }
     /// get a value by 2d index
     pub fn get(&self, ix: Ix2) -> Option<&T> {
-        self.get_ix(ix).map(|i| &self.data[i])
+        let converted = BoundedIx2::<N_ROWS, N_COLS>::try_from(ix).ok()?;
+        Some(&self[converted])
     }
     /// get a mutable value by 2d index
     pub fn get_mut(&mut self, ix: Ix2) -> Option<&mut T> {
-        self.get_ix(ix).map(|i| &mut self.data[i])
+        let converted = BoundedIx2::<N_ROWS, N_COLS>::try_from(ix).ok()?;
+        Some(&mut self[converted])
     }
     /// an iterator over indices from left to right, top to bottom
     pub fn indices() -> V2Indices<N_ROWS, N_COLS> {
@@ -203,6 +199,25 @@ impl<T, const N_ROWS: usize, const N_COLS: usize> V2<T, N_ROWS, N_COLS> {
         col_ix < N_COLS && row_ix < N_ROWS
     }
 }
+
+impl<T, const N_ROWS: usize, const N_COLS: usize> Index<BoundedIx2<N_ROWS, N_COLS>>
+    for V2<T, N_ROWS, N_COLS>
+{
+    type Output = T;
+
+    fn index(&self, index: BoundedIx2<N_ROWS, N_COLS>) -> &Self::Output {
+        &self.data[index.as_usize()]
+    }
+}
+
+impl<T, const N_ROWS: usize, const N_COLS: usize> IndexMut<BoundedIx2<N_ROWS, N_COLS>>
+    for V2<T, N_ROWS, N_COLS>
+{
+    fn index_mut(&mut self, index: BoundedIx2<N_ROWS, N_COLS>) -> &mut Self::Output {
+        &mut self.data[index.as_usize()]
+    }
+}
+
 impl<T, const N_ROWS: usize, const N_COLS: usize> V2<T, N_ROWS, N_COLS>
 where
     T: Clone,
@@ -293,41 +308,6 @@ where
             }
         }
         Ok(())
-    }
-}
-
-/// iterator over vector indices
-pub struct V2Indices<const N_ROWS: usize, const N_COLS: usize> {
-    curr_row: usize,
-    curr_col: usize,
-}
-
-impl<const N_ROWS: usize, const N_COLS: usize> V2Indices<N_ROWS, N_COLS> {
-    fn new() -> Self {
-        Self {
-            curr_row: 0,
-            curr_col: 0,
-        }
-    }
-}
-
-impl<const N_ROWS: usize, const N_COLS: usize> Iterator for V2Indices<N_ROWS, N_COLS> {
-    type Item = Ix2;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.curr_row < N_ROWS {
-            let col_ix = self.curr_col;
-            let row_ix = self.curr_row;
-            if self.curr_col == N_COLS - 1 {
-                self.curr_col = 0;
-                self.curr_row += 1;
-            } else {
-                self.curr_col += 1;
-            }
-            Some(Ix2 { row_ix, col_ix })
-        } else {
-            None
-        }
     }
 }
 
@@ -612,7 +592,7 @@ impl<'a, T, const N_ROWS: usize, const N_COLS: usize> V2Indexed<'a, T, N_ROWS, N
 impl<'a, T, const N_ROWS: usize, const N_COLS: usize> Iterator
     for V2Indexed<'a, T, N_ROWS, N_COLS>
 {
-    type Item = (Ix2, &'a T);
+    type Item = (BoundedIx2<N_ROWS, N_COLS>, &'a T);
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(ix) = self.indices.next() {
@@ -650,50 +630,6 @@ mod tests {
         let v: V2<u8, 3, 3> = V2::new((0..=8).collect()).unwrap();
         let expected = "0 1 2\n3 4 5\n6 7 8";
         let actual = format!("{}", v);
-        assert_eq!(expected, actual);
-    }
-    #[test]
-    fn test_indices() {
-        let ixs: V2Indices<3, 3> = V2Indices::new();
-        let expected = vec![
-            Ix2 {
-                row_ix: 0,
-                col_ix: 0,
-            },
-            Ix2 {
-                row_ix: 0,
-                col_ix: 1,
-            },
-            Ix2 {
-                row_ix: 0,
-                col_ix: 2,
-            },
-            Ix2 {
-                row_ix: 1,
-                col_ix: 0,
-            },
-            Ix2 {
-                row_ix: 1,
-                col_ix: 1,
-            },
-            Ix2 {
-                row_ix: 1,
-                col_ix: 2,
-            },
-            Ix2 {
-                row_ix: 2,
-                col_ix: 0,
-            },
-            Ix2 {
-                row_ix: 2,
-                col_ix: 1,
-            },
-            Ix2 {
-                row_ix: 2,
-                col_ix: 2,
-            },
-        ];
-        let actual = ixs.into_iter().collect::<Vec<Ix2>>();
         assert_eq!(expected, actual);
     }
     #[test]
@@ -762,72 +698,72 @@ mod tests {
     #[test]
     fn test_indexed() {
         let v: V2<u8, 3, 3> = V2::new((0..=8).collect()).unwrap();
-        let expected = vec![
+        let expected: Vec<(BoundedIx2<3, 3>, &u8)> = vec![
             (
-                Ix2 {
+                BoundedIx2 {
                     row_ix: 0,
                     col_ix: 0,
                 },
                 &0,
             ),
             (
-                Ix2 {
+                BoundedIx2 {
                     row_ix: 0,
                     col_ix: 1,
                 },
                 &1,
             ),
             (
-                Ix2 {
+                BoundedIx2 {
                     row_ix: 0,
                     col_ix: 2,
                 },
                 &2,
             ),
             (
-                Ix2 {
+                BoundedIx2 {
                     row_ix: 1,
                     col_ix: 0,
                 },
                 &3,
             ),
             (
-                Ix2 {
+                BoundedIx2 {
                     row_ix: 1,
                     col_ix: 1,
                 },
                 &4,
             ),
             (
-                Ix2 {
+                BoundedIx2 {
                     row_ix: 1,
                     col_ix: 2,
                 },
                 &5,
             ),
             (
-                Ix2 {
+                BoundedIx2 {
                     row_ix: 2,
                     col_ix: 0,
                 },
                 &6,
             ),
             (
-                Ix2 {
+                BoundedIx2 {
                     row_ix: 2,
                     col_ix: 1,
                 },
                 &7,
             ),
             (
-                Ix2 {
+                BoundedIx2 {
                     row_ix: 2,
                     col_ix: 2,
                 },
                 &8,
             ),
         ];
-        let actual = v.indexed().collect::<Vec<(Ix2, &u8)>>();
+        let actual = v.indexed().collect::<Vec<(BoundedIx2<3, 3>, &u8)>>();
         assert_eq!(expected, actual);
     }
     #[test]
@@ -854,186 +790,5 @@ mod tests {
             }),
             Some(&8)
         );
-    }
-    #[test]
-    fn test_north() {
-        assert!(
-            V2::<u8, 3, 3>::north_ix(Ix2 {
-                row_ix: 0,
-                col_ix: 0
-            })
-            .is_none()
-        );
-        assert_eq!(
-            V2::<u8, 3, 3>::north_ix(Ix2 {
-                row_ix: 1,
-                col_ix: 0
-            }),
-            Some(Ix2 {
-                row_ix: 0,
-                col_ix: 0
-            })
-        );
-    }
-    #[test]
-    fn test_south() {
-        assert!(
-            V2::<u8, 3, 3>::south_ix(Ix2 {
-                row_ix: 2,
-                col_ix: 2
-            })
-            .is_none()
-        );
-        assert_eq!(
-            V2::<u8, 3, 3>::south_ix(Ix2 {
-                row_ix: 1,
-                col_ix: 2
-            }),
-            Some(Ix2 {
-                row_ix: 2,
-                col_ix: 2
-            })
-        )
-    }
-    #[test]
-    fn test_east() {
-        assert!(
-            V2::<u8, 3, 3>::east_ix(Ix2 {
-                row_ix: 1,
-                col_ix: 2
-            })
-            .is_none()
-        );
-        assert_eq!(
-            V2::<u8, 3, 3>::east_ix(Ix2 {
-                row_ix: 1,
-                col_ix: 1
-            }),
-            Some(Ix2 {
-                row_ix: 1,
-                col_ix: 2
-            })
-        )
-    }
-    #[test]
-    fn test_west() {
-        assert!(
-            V2::<u8, 3, 3>::west_ix(Ix2 {
-                row_ix: 0,
-                col_ix: 0
-            })
-            .is_none()
-        );
-        assert_eq!(
-            V2::<u8, 3, 3>::west_ix(Ix2 {
-                row_ix: 2,
-                col_ix: 2
-            }),
-            Some(Ix2 {
-                row_ix: 2,
-                col_ix: 1
-            })
-        );
-    }
-    #[test]
-    fn test_northwest() {
-        assert!(
-            V2::<u8, 3, 3>::northwest_ix(Ix2 {
-                row_ix: 0,
-                col_ix: 1
-            })
-            .is_none()
-        );
-        assert_eq!(
-            V2::<u8, 3, 3>::northwest_ix(Ix2 {
-                row_ix: 2,
-                col_ix: 2
-            }),
-            Some(Ix2 {
-                row_ix: 1,
-                col_ix: 1
-            })
-        );
-    }
-    #[test]
-    fn test_northeast() {
-        assert!(
-            V2::<u8, 3, 3>::northeast_ix(Ix2 {
-                row_ix: 0,
-                col_ix: 1
-            })
-            .is_none()
-        );
-        assert!(
-            V2::<u8, 3, 3>::northeast_ix(Ix2 {
-                row_ix: 2,
-                col_ix: 2
-            })
-            .is_none()
-        );
-        assert_eq!(
-            V2::<u8, 3, 3>::northeast_ix(Ix2 {
-                row_ix: 2,
-                col_ix: 1
-            }),
-            Some(Ix2 {
-                row_ix: 1,
-                col_ix: 2
-            })
-        )
-    }
-    #[test]
-    fn test_southwest() {
-        assert!(
-            V2::<u8, 3, 3>::southwest_ix(Ix2 {
-                row_ix: 2,
-                col_ix: 2
-            })
-            .is_none()
-        );
-        assert!(
-            V2::<u8, 3, 3>::southwest_ix(Ix2 {
-                row_ix: 1,
-                col_ix: 0
-            })
-            .is_none()
-        );
-        assert_eq!(
-            V2::<u8, 3, 3>::southwest_ix(Ix2 {
-                row_ix: 1,
-                col_ix: 1
-            }),
-            Some(Ix2 {
-                row_ix: 2,
-                col_ix: 0
-            })
-        )
-    }
-    #[test]
-    fn test_southeast() {
-        assert!(
-            V2::<u8, 3, 3>::southeast_ix(Ix2 {
-                row_ix: 2,
-                col_ix: 2
-            })
-            .is_none()
-        );
-        assert!(
-            V2::<u8, 3, 3>::southeast_ix(Ix2 {
-                row_ix: 1,
-                col_ix: 2
-            })
-            .is_none()
-        );
-        assert_eq!(
-            V2::<u8, 3, 3>::southeast_ix(Ix2 {
-                row_ix: 1,
-                col_ix: 0
-            }),
-            Some(Ix2 {
-                row_ix: 2,
-                col_ix: 1
-            })
-        )
     }
 }
