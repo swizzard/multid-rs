@@ -1,6 +1,6 @@
 //! 2d vector type, parameterized by number of rows and columns
 use crate::errors::VError;
-use crate::ix::{BoundedIx2, Ix2, V2Indices};
+use crate::ix::{BoundedIx2, Ix2CardinalNeighbors, Ix2Neighbors, V2Indices};
 use std::ops::{Index, IndexMut};
 
 /// 2d vector type, parameterized by number of rows and columns
@@ -23,14 +23,12 @@ impl<T, const N_ROWS: usize, const N_COLS: usize> V2<T, N_ROWS, N_COLS> {
         }
     }
     /// get a value by 2d index
-    pub fn get(&self, ix: Ix2) -> Option<&T> {
-        let converted = BoundedIx2::<N_ROWS, N_COLS>::try_from(ix).ok()?;
-        Some(&self[converted])
+    pub fn get(&self, ix: BoundedIx2<N_ROWS, N_COLS>) -> Option<&T> {
+        Some(&self[ix])
     }
     /// get a mutable value by 2d index
-    pub fn get_mut(&mut self, ix: Ix2) -> Option<&mut T> {
-        let converted = BoundedIx2::<N_ROWS, N_COLS>::try_from(ix).ok()?;
-        Some(&mut self[converted])
+    pub fn get_mut(&mut self, ix: BoundedIx2<N_ROWS, N_COLS>) -> Option<&mut T> {
+        Some(&mut self[ix])
     }
     /// an iterator over indices from left to right, top to bottom
     pub fn indices() -> V2Indices<N_ROWS, N_COLS> {
@@ -58,7 +56,10 @@ impl<T, const N_ROWS: usize, const N_COLS: usize> V2<T, N_ROWS, N_COLS> {
     ///
     /// the neighbors of `4` are `[0,1,2,3,5,6,7,8]`, while the neighbors of `2` would be
     /// `[1,4,5]`
-    pub fn neighbors_of(&self, ix: Ix2) -> V2Neighbors<'_, T, N_ROWS, N_COLS> {
+    pub fn neighbors_of(
+        &self,
+        ix: BoundedIx2<N_ROWS, N_COLS>,
+    ) -> V2Neighbors<'_, T, N_ROWS, N_COLS> {
         V2Neighbors::new(&self.data, ix)
     }
     /// an iterator over the cardinal neighbors of a position in the vector
@@ -75,7 +76,10 @@ impl<T, const N_ROWS: usize, const N_COLS: usize> V2<T, N_ROWS, N_COLS> {
     ///
     /// the cardinal neighbors of `4` are `[1,3,5,8]`, while the neighbors of `2` would be
     /// `[1,5]`
-    pub fn cardinal_neighbors_of(&self, ix: Ix2) -> V2CardinalNeighbors<'_, T, N_ROWS, N_COLS> {
+    pub fn cardinal_neighbors_of(
+        &self,
+        ix: BoundedIx2<N_ROWS, N_COLS>,
+    ) -> V2CardinalNeighbors<'_, T, N_ROWS, N_COLS> {
         V2CardinalNeighbors::new(&self.data, ix)
     }
     /// an iterator over tuples of corresponding indices and values, left to right, top to bottom
@@ -83,120 +87,107 @@ impl<T, const N_ROWS: usize, const N_COLS: usize> V2<T, N_ROWS, N_COLS> {
         V2Indexed::new(&self.data)
     }
     /// alter a value in-place
-    pub fn mutate_at<F: Fn(&mut T)>(&mut self, Ix2 { row_ix, col_ix }: Ix2, f: F) {
-        let i = V2::<T, N_ROWS, N_COLS>::convert_ix(col_ix, row_ix);
+    pub fn mutate_at<F: Fn(&mut T)>(&mut self, ix: BoundedIx2<N_ROWS, N_COLS>, f: F) {
+        let i = ix.as_usize();
         if let Some(v) = self.data.get_mut(i) {
             f(v);
         }
     }
     /// possibly get a reference to the value "north" (same column, previous row)
-    pub fn north_of(&self, ix: Ix2) -> Option<&T> {
+    pub fn north_of(&self, ix: BoundedIx2<N_ROWS, N_COLS>) -> Option<&T> {
         V2::<T, N_ROWS, N_COLS>::north_ix(ix).and_then(|i| self.get(i))
     }
     /// possibly get a reference to the value "south" (same column, following row)
-    pub fn south_of(&self, ix: Ix2) -> Option<&T> {
-        V2::<u8, 3, 3>::south_ix(ix).and_then(|i| self.get(i))
+    pub fn south_of(&self, ix: BoundedIx2<N_ROWS, N_COLS>) -> Option<&T> {
+        V2::<T, N_ROWS, N_COLS>::south_ix(ix).and_then(|i| self.get(i))
     }
     /// possibly get a reference to the value "east" (same row, following column)
-    pub fn east_of(&self, ix: Ix2) -> Option<&T> {
+    pub fn east_of(&self, ix: BoundedIx2<N_ROWS, N_COLS>) -> Option<&T> {
         V2::<T, N_ROWS, N_COLS>::east_ix(ix).and_then(|i| self.get(i))
     }
     /// possibly get a reference to the value "west" (same row, previous column)
-    pub fn west_of(&self, ix: Ix2) -> Option<&T> {
+    pub fn west_of(&self, ix: BoundedIx2<N_ROWS, N_COLS>) -> Option<&T> {
         V2::<T, N_ROWS, N_COLS>::west_ix(ix).and_then(|i| self.get(i))
     }
     /// possibly get a reference to the value "northeast" (previous column, previous row)
-    pub fn northeast_of(&self, ix: Ix2) -> Option<&T> {
+    pub fn northeast_of(&self, ix: BoundedIx2<N_ROWS, N_COLS>) -> Option<&T> {
         V2::<T, N_ROWS, N_COLS>::northeast_ix(ix).and_then(|i| self.get(i))
     }
     /// possibly get a reference to the value "northwest" (previous column, previous row)
-    pub fn northwest_of(&self, ix: Ix2) -> Option<&T> {
+    pub fn northwest_of(&self, ix: BoundedIx2<N_ROWS, N_COLS>) -> Option<&T> {
         V2::<T, N_ROWS, N_COLS>::northwest_ix(ix).and_then(|i| self.get(i))
     }
     /// possibly get a reference to the value "southeast" (following column, following row)
-    pub fn southeast_of(&self, ix: Ix2) -> Option<&T> {
+    pub fn southeast_of(&self, ix: BoundedIx2<N_ROWS, N_COLS>) -> Option<&T> {
         V2::<T, N_ROWS, N_COLS>::southeast_ix(ix).and_then(|i| self.get(i))
     }
     /// possibly get a reference to the value "southwest" (following column, previous row)
-    pub fn southwest_of(&self, ix: Ix2) -> Option<&T> {
+    pub fn southwest_of(&self, ix: BoundedIx2<N_ROWS, N_COLS>) -> Option<&T> {
         V2::<T, N_ROWS, N_COLS>::southwest_ix(ix).and_then(|i| self.get(i))
     }
     /// possibly get a mutable reference to the value "north" (same column, previous row)
-    pub fn north_of_mut(&mut self, ix: Ix2) -> Option<&mut T> {
+    pub fn north_of_mut(&mut self, ix: BoundedIx2<N_ROWS, N_COLS>) -> Option<&mut T> {
         V2::<T, N_ROWS, N_COLS>::north_ix(ix).and_then(|i| self.get_mut(i))
     }
     /// possibly get a mutable reference to the value "south" (same column, following row)
-    pub fn south_of_mut(&mut self, ix: Ix2) -> Option<&mut T> {
+    pub fn south_of_mut(&mut self, ix: BoundedIx2<N_ROWS, N_COLS>) -> Option<&mut T> {
         V2::<T, N_ROWS, N_COLS>::south_ix(ix).and_then(|i| self.get_mut(i))
     }
     /// possibly get a mutable reference to the value "east" (same row, following column)
-    pub fn east_of_mut(&mut self, ix: Ix2) -> Option<&mut T> {
+    pub fn east_of_mut(&mut self, ix: BoundedIx2<N_ROWS, N_COLS>) -> Option<&mut T> {
         V2::<T, N_ROWS, N_COLS>::east_ix(ix).and_then(|i| self.get_mut(i))
     }
     /// possibly get a mutable reference to the value "west" (same row, previous column)
-    pub fn west_of_mut(&mut self, ix: Ix2) -> Option<&mut T> {
+    pub fn west_of_mut(&mut self, ix: BoundedIx2<N_ROWS, N_COLS>) -> Option<&mut T> {
         V2::<T, N_ROWS, N_COLS>::west_ix(ix).and_then(|i| self.get_mut(i))
     }
     /// possibly get a mutable reference to the value "northeast" (previous column, previous row)
-    pub fn northeast_of_mut(&mut self, ix: Ix2) -> Option<&mut T> {
+    pub fn northeast_of_mut(&mut self, ix: BoundedIx2<N_ROWS, N_COLS>) -> Option<&mut T> {
         V2::<T, N_ROWS, N_COLS>::northeast_ix(ix).and_then(|i| self.get_mut(i))
     }
     /// possibly get a mutable reference to the value "northwest" (previous column, previous row)
-    pub fn northwest_of_mut(&mut self, ix: Ix2) -> Option<&mut T> {
+    pub fn northwest_of_mut(&mut self, ix: BoundedIx2<N_ROWS, N_COLS>) -> Option<&mut T> {
         V2::<T, N_ROWS, N_COLS>::northwest_ix(ix).and_then(|i| self.get_mut(i))
     }
     /// possibly get a mutable reference to the value "southeast" (following column, following row)
-    pub fn southeast_of_mut(&mut self, ix: Ix2) -> Option<&mut T> {
+    pub fn southeast_of_mut(&mut self, ix: BoundedIx2<N_ROWS, N_COLS>) -> Option<&mut T> {
         V2::<T, N_ROWS, N_COLS>::southeast_ix(ix).and_then(|i| self.get_mut(i))
     }
     /// possibly get a mutable reference to the value "southwest" (following column, previous row)
-    pub fn southwest_of_mut(&mut self, ix: Ix2) -> Option<&mut T> {
+    pub fn southwest_of_mut(&mut self, ix: BoundedIx2<N_ROWS, N_COLS>) -> Option<&mut T> {
         V2::<T, N_ROWS, N_COLS>::southwest_ix(ix).and_then(|i| self.get_mut(i))
     }
     /// possibly get the index "north" (same column, previous row)
-    pub fn north_ix(ix: Ix2) -> Option<Ix2> {
+    pub fn north_ix(ix: BoundedIx2<N_ROWS, N_COLS>) -> Option<BoundedIx2<N_ROWS, N_COLS>> {
         ix.north()
-            .filter(|i| V2::<T, N_ROWS, N_COLS>::in_bounds(*i))
     }
     /// possibly get the index "south" (same column, following row)
-    pub fn south_ix(ix: Ix2) -> Option<Ix2> {
+    pub fn south_ix(ix: BoundedIx2<N_ROWS, N_COLS>) -> Option<BoundedIx2<N_ROWS, N_COLS>> {
         ix.south()
-            .filter(|i| V2::<T, N_ROWS, N_COLS>::in_bounds(*i))
     }
     /// possibly get the index "east" (same row, following column)
-    pub fn east_ix(ix: Ix2) -> Option<Ix2> {
-        ix.east().filter(|i| V2::<T, N_ROWS, N_COLS>::in_bounds(*i))
+    pub fn east_ix(ix: BoundedIx2<N_ROWS, N_COLS>) -> Option<BoundedIx2<N_ROWS, N_COLS>> {
+        ix.east()
     }
     /// possibly get the index "west" (same row, previous column)
-    pub fn west_ix(ix: Ix2) -> Option<Ix2> {
-        ix.west().filter(|i| V2::<T, N_ROWS, N_COLS>::in_bounds(*i))
+    pub fn west_ix(ix: BoundedIx2<N_ROWS, N_COLS>) -> Option<BoundedIx2<N_ROWS, N_COLS>> {
+        ix.west()
     }
     /// possibly get the index "northeast" (following column, previous row)
-    pub fn northeast_ix(ix: Ix2) -> Option<Ix2> {
+    pub fn northeast_ix(ix: BoundedIx2<N_ROWS, N_COLS>) -> Option<BoundedIx2<N_ROWS, N_COLS>> {
         ix.northeast()
-            .filter(|i| V2::<T, N_ROWS, N_COLS>::in_bounds(*i))
     }
     /// possibly get the index "northwest" (previous column, previous row)
-    pub fn northwest_ix(ix: Ix2) -> Option<Ix2> {
+    pub fn northwest_ix(ix: BoundedIx2<N_ROWS, N_COLS>) -> Option<BoundedIx2<N_ROWS, N_COLS>> {
         ix.northwest()
-            .filter(|i| V2::<T, N_ROWS, N_COLS>::in_bounds(*i))
     }
     /// possibly get the index "southeast" (following column, following row)
-    pub fn southeast_ix(ix: Ix2) -> Option<Ix2> {
+    pub fn southeast_ix(ix: BoundedIx2<N_ROWS, N_COLS>) -> Option<BoundedIx2<N_ROWS, N_COLS>> {
         ix.southeast()
-            .filter(|i| V2::<T, N_ROWS, N_COLS>::in_bounds(*i))
     }
     /// possibly get the index "southwest" (previous column, following row)
-    pub fn southwest_ix(ix: Ix2) -> Option<Ix2> {
+    pub fn southwest_ix(ix: BoundedIx2<N_ROWS, N_COLS>) -> Option<BoundedIx2<N_ROWS, N_COLS>> {
         ix.southwest()
-            .filter(|i| V2::<T, N_ROWS, N_COLS>::in_bounds(*i))
-    }
-    fn convert_ix(col_ix: usize, row_ix: usize) -> usize {
-        row_ix * N_COLS + col_ix
-    }
-    #[inline]
-    const fn in_bounds(Ix2 { col_ix, row_ix }: Ix2) -> bool {
-        col_ix < N_COLS && row_ix < N_ROWS
     }
 }
 
@@ -371,48 +362,14 @@ impl<'a, T, const N_ROWS: usize, const N_COLS: usize> Iterator for V2Cols<'a, T,
 /// iterator over neighbors
 pub struct V2Neighbors<'a, T, const N_ROWS: usize, const N_COLS: usize> {
     data: &'a [T],
-    center_col_ix: usize,
-    center_row_ix: usize,
-    curr_col_ix: usize,
-    curr_row_ix: usize,
+    it: Ix2Neighbors<N_ROWS, N_COLS>,
 }
 
 impl<'a, T, const N_ROWS: usize, const N_COLS: usize> V2Neighbors<'a, T, N_ROWS, N_COLS> {
-    fn new(data: &'a [T], Ix2 { row_ix, col_ix }: Ix2) -> Self {
+    fn new(data: &'a [T], start: BoundedIx2<N_ROWS, N_COLS>) -> Self {
         Self {
             data,
-            center_col_ix: col_ix,
-            center_row_ix: row_ix,
-            curr_col_ix: 0,
-            curr_row_ix: 0,
-        }
-    }
-    fn dec_col(&self) -> Option<usize> {
-        if self.center_col_ix == 0 {
-            None
-        } else {
-            Some(self.center_col_ix - 1)
-        }
-    }
-    fn inc_col(&self) -> Option<usize> {
-        if self.center_col_ix == N_COLS - 1 {
-            None
-        } else {
-            Some(self.center_col_ix + 1)
-        }
-    }
-    fn dec_row(&self) -> Option<usize> {
-        if self.center_row_ix == 0 {
-            None
-        } else {
-            Some(self.center_row_ix - 1)
-        }
-    }
-    fn inc_row(&self) -> Option<usize> {
-        if self.center_row_ix == N_ROWS - 1 {
-            None
-        } else {
-            Some(self.center_row_ix + 1)
+            it: Ix2Neighbors::new(start),
         }
     }
 }
@@ -423,136 +380,22 @@ impl<'a, T, const N_ROWS: usize, const N_COLS: usize> Iterator
     type Item = &'a T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        while self.curr_row_ix < 3 {
-            if self.curr_col_ix == 1 && self.curr_row_ix == 1 {
-                self.curr_col_ix = 2;
-                continue;
-            }
-            let col_ix = match self.curr_col_ix {
-                0 => self.dec_col(),
-                1 => Some(self.center_col_ix),
-                2 => self.inc_col(),
-                _ => panic!("unreachable col"),
-            };
-            let row_ix = match self.curr_row_ix {
-                0 => self.dec_row(),
-                1 => Some(self.center_row_ix),
-                2 => self.inc_row(),
-                _ => panic!("unreachable row"),
-            };
-            if col_ix.is_none() {
-                self.curr_col_ix = if self.curr_col_ix == 2 {
-                    0
-                } else {
-                    self.curr_col_ix + 1
-                };
-                continue;
-            };
-            if row_ix.is_none() {
-                self.curr_row_ix += 1;
-                continue;
-            }
-            if self.curr_col_ix == 2 {
-                self.curr_row_ix += 1;
-                self.curr_col_ix = 0;
-            } else {
-                self.curr_col_ix += 1;
-            }
-            return Some(&self.data[row_ix.unwrap() * N_COLS + col_ix.unwrap()]);
-        }
-        None
-    }
-}
-
-#[derive(Copy, Clone, PartialEq, Eq)]
-enum NeighborDirection {
-    N,
-    S,
-    E,
-    W,
-}
-
-impl NeighborDirection {
-    fn new() -> Option<Self> {
-        Some(Self::N)
-    }
-    fn next(&self) -> Option<Self> {
-        match self {
-            Self::N => Some(Self::E),
-            Self::E => Some(Self::S),
-            Self::S => Some(Self::W),
-            Self::W => None,
-        }
+        self.it.next().map(|i| &self.data[i.as_usize()])
     }
 }
 
 /// iterator over cardinal neighbors
 pub struct V2CardinalNeighbors<'a, T, const N_ROWS: usize, const N_COLS: usize> {
     data: &'a [T],
-    center_col_ix: usize,
-    center_row_ix: usize,
-    direction: Option<NeighborDirection>,
+    it: Ix2CardinalNeighbors<N_ROWS, N_COLS>,
 }
 
 impl<'a, T, const N_ROWS: usize, const N_COLS: usize> V2CardinalNeighbors<'a, T, N_ROWS, N_COLS> {
-    pub fn new(data: &'a [T], Ix2 { row_ix, col_ix }: Ix2) -> Self {
+    pub fn new(data: &'a [T], start: BoundedIx2<N_ROWS, N_COLS>) -> Self {
         Self {
             data,
-            center_col_ix: col_ix,
-            center_row_ix: row_ix,
-            direction: NeighborDirection::new(),
+            it: Ix2CardinalNeighbors::new(start),
         }
-    }
-    fn dec_col(&self) -> Option<usize> {
-        if self.center_col_ix == 0 {
-            None
-        } else {
-            Some(self.center_col_ix - 1)
-        }
-    }
-    fn inc_col(&self) -> Option<usize> {
-        if self.center_col_ix == N_COLS - 1 {
-            None
-        } else {
-            Some(self.center_col_ix + 1)
-        }
-    }
-    fn dec_row(&self) -> Option<usize> {
-        if self.center_row_ix == 0 {
-            None
-        } else {
-            Some(self.center_row_ix - 1)
-        }
-    }
-    fn inc_row(&self) -> Option<usize> {
-        if self.center_row_ix == N_ROWS - 1 {
-            None
-        } else {
-            Some(self.center_row_ix + 1)
-        }
-    }
-    fn get_north(&self) -> Option<usize> {
-        self.dec_row().map(|nr| nr * N_COLS + self.center_col_ix)
-    }
-    fn get_south(&self) -> Option<usize> {
-        self.inc_row().map(|nr| nr * N_COLS * self.center_col_ix)
-    }
-    fn get_east(&self) -> Option<usize> {
-        self.inc_col().map(|nc| self.center_row_ix * N_COLS + nc)
-    }
-    fn get_west(&self) -> Option<usize> {
-        self.dec_col().map(|nc| self.center_row_ix * N_COLS + nc)
-    }
-    fn get_dir(&self, direction: NeighborDirection) -> Option<usize> {
-        match direction {
-            NeighborDirection::N => self.get_north(),
-            NeighborDirection::S => self.get_south(),
-            NeighborDirection::E => self.get_east(),
-            NeighborDirection::W => self.get_west(),
-        }
-    }
-    fn next_direction(&mut self) {
-        self.direction = self.direction.and_then(|d: NeighborDirection| d.next());
     }
 }
 
@@ -562,20 +405,13 @@ impl<'a, T, const N_ROWS: usize, const N_COLS: usize> Iterator
     type Item = &'a T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        while let Some(dir) = self.direction {
-            self.next_direction();
-            if let Some(d) = self.get_dir(dir) {
-                return Some(&self.data[d]);
-            }
-        }
-        None
+        self.it.next().map(|i| &self.data[i.as_usize()])
     }
 }
 
 /// iterator over `(index, reference to value)` tuples
 pub struct V2Indexed<'a, T, const N_ROWS: usize, const N_COLS: usize> {
     indices: V2Indices<N_ROWS, N_COLS>,
-    i: usize,
     data: &'a [T],
 }
 
@@ -583,7 +419,6 @@ impl<'a, T, const N_ROWS: usize, const N_COLS: usize> V2Indexed<'a, T, N_ROWS, N
     fn new(data: &'a [T]) -> Self {
         Self {
             indices: V2Indices::new(),
-            i: 0,
             data,
         }
     }
@@ -595,13 +430,7 @@ impl<'a, T, const N_ROWS: usize, const N_COLS: usize> Iterator
     type Item = (BoundedIx2<N_ROWS, N_COLS>, &'a T);
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(ix) = self.indices.next() {
-            let old_ix = self.i;
-            self.i += 1;
-            Some((ix, &self.data[old_ix]))
-        } else {
-            None
-        }
+        self.indices.next().map(|i| (i, &self.data[i.as_usize()]))
     }
 }
 
@@ -654,28 +483,19 @@ mod tests {
 
         let expected_upper_left: Vec<&u8> = vec![&1, &3, &4];
         let actual_upper_left: Vec<&u8> = v2
-            .neighbors_of(Ix2 {
-                row_ix: 0,
-                col_ix: 0,
-            })
+            .neighbors_of(BoundedIx2::<3, 3>::new(0, 0).unwrap())
             .collect();
         assert_eq!(expected_upper_left, actual_upper_left, "upper_left");
 
         let expected_center: Vec<&u8> = vec![&0, &1, &2, &3, &5, &6, &7, &8];
         let actual_center: Vec<&u8> = v2
-            .neighbors_of(Ix2 {
-                row_ix: 1,
-                col_ix: 1,
-            })
+            .neighbors_of(BoundedIx2::<3, 3>::new(1, 1).unwrap())
             .collect();
         assert_eq!(expected_center, actual_center, "center");
 
         let expected_bottom_middle: Vec<&u8> = vec![&3, &4, &5, &6, &8];
         let actual_bottom_middle: Vec<&u8> = v2
-            .neighbors_of(Ix2 {
-                row_ix: 2,
-                col_ix: 1,
-            })
+            .neighbors_of(BoundedIx2::<3, 3>::new(2, 1).unwrap())
             .collect();
         assert_eq!(
             expected_bottom_middle, actual_bottom_middle,
@@ -686,82 +506,22 @@ mod tests {
     fn test_mutate_at() {
         let mut v: V2<u8, 3, 3> = V2::new((0..=8).collect()).unwrap();
         let expected = vec![0, 1, 9, 3, 4, 5, 6, 7, 8];
-        v.mutate_at(
-            Ix2 {
-                row_ix: 0,
-                col_ix: 2,
-            },
-            |v: &mut u8| *v = 9,
-        );
+        v.mutate_at(BoundedIx2::<3, 3>::new(0, 2).unwrap(), |v: &mut u8| *v = 9);
         assert_eq!(expected, v.data);
     }
     #[test]
     fn test_indexed() {
         let v: V2<u8, 3, 3> = V2::new((0..=8).collect()).unwrap();
         let expected: Vec<(BoundedIx2<3, 3>, &u8)> = vec![
-            (
-                BoundedIx2 {
-                    row_ix: 0,
-                    col_ix: 0,
-                },
-                &0,
-            ),
-            (
-                BoundedIx2 {
-                    row_ix: 0,
-                    col_ix: 1,
-                },
-                &1,
-            ),
-            (
-                BoundedIx2 {
-                    row_ix: 0,
-                    col_ix: 2,
-                },
-                &2,
-            ),
-            (
-                BoundedIx2 {
-                    row_ix: 1,
-                    col_ix: 0,
-                },
-                &3,
-            ),
-            (
-                BoundedIx2 {
-                    row_ix: 1,
-                    col_ix: 1,
-                },
-                &4,
-            ),
-            (
-                BoundedIx2 {
-                    row_ix: 1,
-                    col_ix: 2,
-                },
-                &5,
-            ),
-            (
-                BoundedIx2 {
-                    row_ix: 2,
-                    col_ix: 0,
-                },
-                &6,
-            ),
-            (
-                BoundedIx2 {
-                    row_ix: 2,
-                    col_ix: 1,
-                },
-                &7,
-            ),
-            (
-                BoundedIx2 {
-                    row_ix: 2,
-                    col_ix: 2,
-                },
-                &8,
-            ),
+            (BoundedIx2::<3, 3>::new(0, 0).unwrap(), &0),
+            (BoundedIx2::<3, 3>::new(0, 1).unwrap(), &1),
+            (BoundedIx2::<3, 3>::new(0, 2).unwrap(), &2),
+            (BoundedIx2::<3, 3>::new(1, 0).unwrap(), &3),
+            (BoundedIx2::<3, 3>::new(1, 1).unwrap(), &4),
+            (BoundedIx2::<3, 3>::new(1, 2).unwrap(), &5),
+            (BoundedIx2::<3, 3>::new(2, 0).unwrap(), &6),
+            (BoundedIx2::<3, 3>::new(2, 1).unwrap(), &7),
+            (BoundedIx2::<3, 3>::new(2, 2).unwrap(), &8),
         ];
         let actual = v.indexed().collect::<Vec<(BoundedIx2<3, 3>, &u8)>>();
         assert_eq!(expected, actual);
@@ -769,26 +529,6 @@ mod tests {
     #[test]
     fn test_get() {
         let v2: V2<u8, 3, 3> = V2::new((0..=8).collect::<Vec<u8>>()).unwrap();
-        assert!(
-            v2.get(Ix2 {
-                row_ix: 2,
-                col_ix: 3
-            })
-            .is_none()
-        );
-        assert!(
-            v2.get(Ix2 {
-                row_ix: 3,
-                col_ix: 2
-            })
-            .is_none()
-        );
-        assert_eq!(
-            v2.get(Ix2 {
-                row_ix: 2,
-                col_ix: 2
-            }),
-            Some(&8)
-        );
+        assert_eq!(v2.get(BoundedIx2::<3, 3>::new(2, 2).unwrap()), Some(&8));
     }
 }

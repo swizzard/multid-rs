@@ -11,5 +11,5 @@ pub mod errors;
 pub mod ix;
 pub mod v;
 
-pub use ix::Ix2;
+pub use ix::BoundedIx2;
 pub use v::V2;
