@@ -117,7 +117,7 @@ pub struct V2Indices<const N_ROWS: usize, const N_COLS: usize> {
 }
 
 impl<const N_ROWS: usize, const N_COLS: usize> V2Indices<N_ROWS, N_COLS> {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             curr_row: 0,
             curr_col: 0,
@@ -211,6 +211,26 @@ impl<const N_ROWS: usize, const N_COLS: usize> Iterator for Ix2CardinalNeighbors
         }
         None
     }
+}
+
+pub struct BoundedIx2Rows<const N_ROWS: usize, const N_COLS: usize> {
+    row: std::ops::Range<usize>,
+}
+
+impl<const N_ROWS: usize, const N_COLS: usize> BoundedIx2Rows<N_ROWS, N_COLS> {
+    pub fn new() -> Self {
+        Self { row: 0..N_ROWS }
+    }
+}
+
+impl<const N_ROWS: usize, const N_COLS: usize> Default for BoundedIx2Rows<N_ROWS, N_COLS> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<const N_ROWS: usize, const N_COLS: usize> Iterator for BoundedIx2Rows<N_ROWS, N_COLS> {
+    type Item = [BoundedIx2<N_ROWS, N_COLS>; N_COLS];
 }
 
 #[cfg(test)]
