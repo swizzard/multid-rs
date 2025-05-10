@@ -1,5 +1,5 @@
 use multid::V2;
-use multid::ix::V2Indices;
+use multid::iterators::V2Indices;
 
 #[derive(Debug, Clone, PartialEq)]
 struct OwnedU8(Box<u8>);
@@ -9,12 +9,6 @@ impl OwnedU8 {
         Self(Box::new(v))
     }
 }
-
-/*
-* 0 1 2
-* 3 4 5
-* 6 7 8
-*/
 
 #[test]
 fn test_owned() {
