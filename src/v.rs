@@ -22,6 +22,22 @@ impl<T, const N_ROWS: usize, const N_COLS: usize> V2<T, N_ROWS, N_COLS> {
             Ok(Self { data })
         }
     }
+    /// possibly retrieve a reference to a value given a possible index
+    pub fn get(&self, ix: Option<BoundedIx2<N_ROWS, N_COLS>>) -> Option<&T> {
+        if let Some(i) = ix {
+            Some(&self[i])
+        } else {
+            None
+        }
+    }
+    /// possibly retrieve a mutable reference to a value given a possible index
+    pub fn get_mut(&mut self, ix: Option<BoundedIx2<N_ROWS, N_COLS>>) -> Option<&mut T> {
+        if let Some(i) = ix {
+            Some(&mut self[i])
+        } else {
+            None
+        }
+    }
 }
 
 impl<T, const N_ROWS: usize, const N_COLS: usize> PartialEq for V2<T, N_ROWS, N_COLS>
