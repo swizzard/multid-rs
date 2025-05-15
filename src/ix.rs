@@ -118,6 +118,11 @@ impl<const N_ROWS: usize, const N_COLS: usize> Default for BoundedIx2<N_ROWS, N_
         }
     }
 }
+impl<const N_ROWS: usize, const N_COLS: usize> std::fmt::Display for BoundedIx2<N_ROWS, N_COLS> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(f, "({}, {})", self.row_ix, self.col_ix)
+    }
+}
 
 #[cfg(test)]
 mod test {
