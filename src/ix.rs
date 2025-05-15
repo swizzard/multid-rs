@@ -16,6 +16,19 @@ impl<const N_ROWS: usize, const N_COLS: usize> BoundedIx2<N_ROWS, N_COLS> {
         *col_ix < N_COLS && *row_ix < N_ROWS
     }
 
+    pub const fn min() -> Self {
+        Self {
+            row_ix: 0,
+            col_ix: 0,
+        }
+    }
+    pub const fn max() -> Self {
+        Self {
+            row_ix: N_ROWS - 1,
+            col_ix: N_COLS - 1,
+        }
+    }
+
     pub fn new(row_ix: usize, col_ix: usize) -> Option<Self> {
         if col_ix < N_COLS && row_ix < N_ROWS {
             Some(Self { col_ix, row_ix })
