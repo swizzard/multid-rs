@@ -149,11 +149,11 @@ where
         for (i, v) in d {
             let ni = i + 1;
             if ni == self.data.len() {
-                write!(f, "{}", v)?;
+                write!(f, "{v}")?;
             } else if ni % N_COLS == 0 {
-                writeln!(f, "{}", v)?;
+                writeln!(f, "{v}")?;
             } else {
-                write!(f, "{} ", v)?;
+                write!(f, "{v} ")?;
             }
         }
         Ok(())
@@ -184,7 +184,7 @@ mod tests {
     fn test_display() {
         let v: V2<u8, 3, 3> = V2::new((0..=8).collect()).unwrap();
         let expected = "0 1 2\n3 4 5\n6 7 8";
-        let actual = format!("{}", v);
+        let actual = format!("{v}");
         assert_eq!(expected, actual);
     }
 }

@@ -37,6 +37,16 @@ impl<const N_ROWS: usize, const N_COLS: usize> BoundedIx2<N_ROWS, N_COLS> {
         }
     }
 
+    /// x-coordinate
+    pub fn x(&self) -> usize {
+        self.col_ix
+    }
+
+    /// y-coordinate
+    pub fn y(&self) -> usize {
+        self.row_ix
+    }
+
     /// convert to 1d index
     pub fn as_usize(&self) -> usize {
         self.row_ix * N_COLS + self.col_ix

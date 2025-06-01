@@ -18,12 +18,12 @@ fn test_owned() {
     }
     let mut v2: V2<OwnedU8, 3, 3> = V2::new(data).unwrap();
     for ix in V2Indices::<3, 3>::new() {
-        if let Some(wix) = ix.west() {
-            if let Some(nix) = ix.north() {
-                let s = *v2[wix].0 + *v2[nix].0;
-                if s % 3 == 0 {
-                    *v2[ix].0 += 10;
-                }
+        if let Some(wix) = ix.west()
+            && let Some(nix) = ix.north()
+        {
+            let s = *v2[wix].0 + *v2[nix].0;
+            if s % 3 == 0 {
+                *v2[ix].0 += 10;
             }
         }
     }
