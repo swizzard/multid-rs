@@ -1,6 +1,7 @@
 //! # custom index types
+use std::cmp::Ordering;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct BoundedIx2<const N_ROWS: usize, const N_COLS: usize> {
     /// y-coordinate
     row_ix: usize,
@@ -8,7 +9,21 @@ pub struct BoundedIx2<const N_ROWS: usize, const N_COLS: usize> {
     col_ix: usize,
 }
 
-impl<const N_ROWS: usize, const N_COLS: usize> Eq for BoundedIx2<N_ROWS, N_COLS> {}
+impl<const N_ROWS: usize, const N_COLS: usize> Ord for BoundedIx2<N_ROWS, N_COLS> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match self.row_ix.cmp(&other.row_ix) {
+            Ordering::Less => Ordering::Less,
+            Ordering::Greater => Ordering::Greater,
+            Ordering::Equal => self.col_ix.cmp(&other.col_ix),
+        }
+    }
+}
+
+impl<const N_ROWS: usize, const N_COLS: usize> PartialOrd for BoundedIx2<N_ROWS, N_COLS> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
 
 impl<const N_ROWS: usize, const N_COLS: usize> BoundedIx2<N_ROWS, N_COLS> {
     #[inline]
@@ -242,6 +257,49 @@ mod test {
                 row_ix: 1
             }
         );
+    }
+    #[test]
+    fn test_ord() {
+        let b1: BoundedIx2<3, 3> = BoundedIx2 {
+            row_ix: 1,
+            col_ix: 3,
+        };
+        let b2: BoundedIx2<3, 3> = BoundedIx2 {
+            row_ix: 1,
+            col_ix: 3,
+        };
+        let actual_cmp = b1.cmp(&b2);
+        assert_eq!(std::cmp::Ordering::Equal, actual_cmp);
+        let b1: BoundedIx2<3, 3> = BoundedIx2 {
+            row_ix: 1,
+            col_ix: 3,
+        };
+        let b2: BoundedIx2<3, 3> = BoundedIx2 {
+            row_ix: 1,
+            col_ix: 5,
+        };
+        let actual_cmp = b1.cmp(&b2);
+        assert_eq!(std::cmp::Ordering::Less, actual_cmp);
+        let b1: BoundedIx2<3, 3> = BoundedIx2 {
+            row_ix: 1,
+            col_ix: 3,
+        };
+        let b2: BoundedIx2<3, 3> = BoundedIx2 {
+            row_ix: 1,
+            col_ix: 1,
+        };
+        let actual_cmp = b1.cmp(&b2);
+        assert_eq!(std::cmp::Ordering::Greater, actual_cmp);
+        let b1: BoundedIx2<3, 3> = BoundedIx2 {
+            row_ix: 1,
+            col_ix: 3,
+        };
+        let b2: BoundedIx2<3, 3> = BoundedIx2 {
+            row_ix: 0,
+            col_ix: 3,
+        };
+        let actual_cmp = b1.cmp(&b2);
+        assert_eq!(std::cmp::Ordering::Greater, actual_cmp);
     }
 }
 
